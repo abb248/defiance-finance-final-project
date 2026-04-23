@@ -4,71 +4,74 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
 
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-
-
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Lütfen geçerli bir e-posta adresi girin.",
-  }),
-});
-
-const AuthForm = ({ type }: { type: string }) => {
+import CustomInput from './CustomInput';
+import { authFormSchema } from '@/lib/utilsd';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
+import { Loader2 } from "lucide-react"
+const AuthForm = ({ type }: { type: 'sign-in' | 'sign-up' }) => {
   const [user, setUser] = useState(null);
+const [isLoading, setIsLoading] = useState(false)
+  const formSchema = authFormSchema(type);
 
-  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "", 
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      state: '',
+     postalCode: '',
+     dateOfBirth: '',
+     ssn: '',
     },
   });
+async function onSubmit(values: z.infer<typeof formSchema>) {
+  setIsLoading(true)
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  console.log(values)
+
+  // fake delay (backend yoksa)
+  setTimeout(() => {
+    setIsLoading(false)
+  }, 2000)
+}
+ 
 
   return (
     <section className="auth-form">
-      <header className='flex flex-col gap-5 md:gap-8'>
+      <header className="flex flex-col gap-5 md:gap-8">
         <Link href="/" className="cursor-pointer flex items-center gap-1">
-          <Image 
+          <Image
             src="/icons/logo.svg"
             width={34}
             height={34}
             alt="SpendWise logo"
           />
-          <h1 className="text-26 font-ibm-plex-serif font-bold text-green-700">SpendWise</h1>
+          <h1 className="text-26 font-ibm-plex-serif font-bold text-green-700">
+            SpendWise
+          </h1>
         </Link>
 
         <div className="flex flex-col gap-1 md:gap-3">
           <h1 className="text-24 lg:text-36 font-semibold text-gray-900">
-            {user 
-              ? 'Hesabı Bağla' 
-              : type === 'sign-in' 
-                ? 'Giriş Yap' 
-                : 'Kayıt Ol'
-            }
+            {user
+              ? 'Hesabı Bağla'
+              : type === 'sign-in'
+              ? 'Giriş Yap'
+              : 'Kayıt Ol'}
           </h1>
+
           <p className="text-16 font-normal text-gray-600">
-            {user 
+            {user
               ? 'Başlamak için hesabınızı bağlayın'
-              : 'Lütfen bilgilerinizi giriniz'
-            }
+              : 'Lütfen bilgilerinizi giriniz'}
           </p>
         </div>
       </header>
@@ -77,42 +80,100 @@ const AuthForm = ({ type }: { type: string }) => {
         <div className="flex flex-col gap-4">
           {/* PlaidLink daha sonra eklenecek */}
         </div>
-      ): (
+      ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
-            {/* form  */}
-            <FormField
+            {type === 'sign-up' && (
+              <div className="flex gap-4">
+                <CustomInput
+                  control={form.control}
+                  name="firstName"
+                  label="Ad"
+                  placeholder="Örn: Dila"
+                />
+                <CustomInput
+                  control={form.control}
+                  name="lastName"
+                  label="Soyad"
+                  placeholder="Örn: Yılmaz"
+                />
+              </div>
+            )}
+
+            <CustomInput
               control={form.control}
               name="email"
-              render={({ field }) => (
-                <div className="form-item">
-                  <FormLabel className="form-label">
-                    E-posta
-                  </FormLabel>
-                  <div className="flex w-full flex-col">
-                    <FormControl>
-                      <Input 
-                        placeholder="E-postanızı girin" 
-                        className="input-class"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage className="form-message mt-2 "  />
-                  </div>
-                </div>
-              )}
+              label="E-posta"
+              placeholder="E-postanızı girin"
             />
 
-            {/* Buton metni de Giriş/Kayıt sayfasına göre dinamik yapıda oldu */}
-            <Button type="submit" className="bg-green-600 hover:bg-green-700 w-full">
-              {type === 'sign-in' ? 'Giriş Yap' : 'Kayıt Ol'}
-            </Button>
+            <CustomInput
+              control={form.control}
+              name="password"
+              label="Şifre"
+              placeholder="Şifrenizi girin"
+            />
+            <CustomInput
+        control={form.control}
+        name="address"
+        label="Adres"
+        placeholder="Adresinizi girin"
+      />
+        <CustomInput
+          control={form.control}
+          name="ssn"
+          label="SSN"
+          placeholder="Örn: 1234"
+        />
+        <CustomInput
+          control={form.control}
+          name="dateOfBirth"
+          label="Doğum Tarihi"
+          placeholder="YYYY-AA-GG"
+        />
+        <CustomInput
+          control={form.control}
+          name="postalCode"
+          label="Posta Kodu"
+          placeholder="Örn: 06540"
+        />
+        
+           <Button
+  type="submit"
+  disabled={isLoading}
+  className="bg-green-600 hover:bg-green-700 w-full"
+>
+  {isLoading ? (
+    <>
+      <Loader2 size={20} className="animate-spin" />
+      {" "}Loading...
+    </>
+  ) : type === 'sign-in' ? (
+    'Giriş Yap'
+  ) : (
+    'Kayıt Ol'
+  )}
+</Button>
           </form>
         </Form>
+        
       )}
+      <footer className="flex justify-center gap-1">
+  <p className="text-14 font-normal text-gray-600">
+    {type === 'sign-in'
+      ? "Hesabın yok mu?"
+      : "Zaten hesabın var mı?"}
+  </p>
+
+  <Link
+    href={type === 'sign-in' ? '/sign-up' : '/sign-in'}
+    className="form-link"
+  >
+    {type === 'sign-in' ? 'Kayıt Ol' : 'Giriş Yap'}
+  </Link>
+</footer>
     </section>
-  )
-}
+  );
+};
 
 export default AuthForm;

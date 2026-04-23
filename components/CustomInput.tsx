@@ -9,7 +9,7 @@ import {
 import { Input } from './ui/input'
 import { Control, FieldPath } from 'react-hook-form'
 import { z } from 'zod'
-import { authFormSchema } from '@/lib/utils'
+import { authFormSchema } from '@/lib/utilsd'
 
 const formSchema = authFormSchema('sign-up')
 type FormValues = z.infer<typeof formSchema>
