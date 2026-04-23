@@ -11,7 +11,7 @@ import {
   SheetClose,
   SheetContent,
   SheetTrigger,
-} from ".,/ui/sheet";
+} from "./ui/sheet";
 
 type MobileNavProps = {
   user?: {
