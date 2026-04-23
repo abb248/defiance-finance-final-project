@@ -1,7 +1,17 @@
-import { formatAmount } from '@/lib/utils'
+import { formatAmount } from '../../lib/utilsz'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+
+type CreditCardProps = {
+  account: {
+    name?: string
+    currentBalance: number
+    [key: string]: any
+  }
+  userName: string
+  showBalance?: boolean
+}
 
 const BankCard = ({
   account,
@@ -18,7 +28,7 @@ const BankCard = ({
             </h1>
 
             <p className="font-ibm-plex-serif font-black text-white">
-              {formatAmount(account.currentBalance)}
+              {showBalance ? formatAmount(account.currentBalance) : '****'}
             </p>
           </div>
 
@@ -34,7 +44,7 @@ const BankCard = ({
             </div>
 
             <p className="text-14 font-semibold tracking-[1.1px] text-white">
-              ✪✪✪✪ ✪✪✪✪ ✪✪✪✪ <span className="text-16">{account.mask}</span>
+              ✪✪✪✪ ✪✪✪✪ ✪✪✪✪ <span className="text-16">1234</span>
             </p>
           </article>
         </div>
@@ -61,7 +71,7 @@ const BankCard = ({
           width={316}
           height={190}
           alt="lines"
-          className="absolute top-0 left-0"
+          className="absolute left-0 top-0"
         />
       </Link>
     </div>

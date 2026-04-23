@@ -2,9 +2,20 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 // BankCard importunu kendi proje yoluna göre ekle
-// import BankCard from '@/components/BankCard'
+import BankCard from './BankCard'
 
-const RightSidebar = ({ user, transactions, banks }: RightSidebarProps) => {
+type RightSidebarProps = {
+  user: {
+    firstName: string
+    lastName: string
+    email: string
+  }
+  transactions?: any[]
+  banks?: any[]
+}
+
+
+const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
   return (
     <aside className="right-sidebar">
       <section className="flex flex-col pb-8">

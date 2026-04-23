@@ -4,14 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { sidebarLinks } from "@/constants";
-import { cn } from "@/lib/utils";
+import { sidebarLinks } from "../constants";
+import { cn } from "../lib/utilsz";
 import {
   Sheet,
   SheetClose,
   SheetContent,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from ".,/ui/sheet";
+
+type MobileNavProps = {
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+};
 
 const MobileNav = ({ user }: MobileNavProps) => {
   const pathname = usePathname();
@@ -71,12 +79,9 @@ const MobileNav = ({ user }: MobileNavProps) => {
                       />
 
                       <p
-                        className={cn(
-                          "text-16 font-semibold text-black-2",
-                          {
-                            "text-white": isActive,
-                          }
-                        )}
+                        className={cn("text-16 font-semibold text-black-2", {
+                          "text-white": isActive,
+                        })}
                       >
                         {item.label}
                       </p>
@@ -85,10 +90,12 @@ const MobileNav = ({ user }: MobileNavProps) => {
                 );
               })}
 
-              USER
+              <div className="mt-auto px-4 text-black-2">
+                {user?.firstName ? `${user.firstName} ${user?.lastName ?? ""}` : "USER"}
+              </div>
             </nav>
 
-            FOOTER
+            <div className="px-4 pb-6 text-black-2">FOOTER</div>
           </div>
         </SheetContent>
       </Sheet>
