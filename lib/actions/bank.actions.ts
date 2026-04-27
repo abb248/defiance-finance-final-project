@@ -5,5 +5,8 @@ export const getAccounts = async ({ userId }: { userId: string }) => {
 
 // Eğer sayfa getAccount (tekil) fonksiyonunu da isterse diye bunu da ekleyelim:
 export const getAccount = async ({ appwriteItemId }: { appwriteItemId: string }) => {
-  return { data: null };
+return { 
+    data: null,
+    transactions: [] // TypeScript hatasını önlemek için boş dizi dönüyoruz
+  };
 }
