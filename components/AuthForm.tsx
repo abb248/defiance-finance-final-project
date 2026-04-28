@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn, signUp } from '@/lib/actions/user.actions';
 
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Loader2 } from "lucide-react"
 const AuthForm = ({ type }: { type: 'sign-in' | 'sign-up' }) => {
+  const router = useRouter();
   const [user, setUser] = useState(null);
 const [isLoading, setIsLoading] = useState(false)
   const formSchema = authFormSchema(type);
@@ -25,23 +28,53 @@ const [isLoading, setIsLoading] = useState(false)
       password: '',
       firstName: '',
       lastName: '',
-      address: '',
+      address1: '',
       state: '',
      postalCode: '',
      dateOfBirth: '',
      ssn: '',
     },
   });
-async function onSubmit(values: z.infer<typeof formSchema>) {
-  setIsLoading(true)
+// components/AuthForm.tsx içindeki onSubmit fonksiyonu
 
-  console.log(values)
+const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  setIsLoading(true);
 
-  // fake delay (backend yoksa)
-  setTimeout(() => {
-    setIsLoading(false)
-  }, 2000)
-}
+  try {
+    if (type === 'sign-up') {
+      // 1. Supabase kayıt fonksiyonumuzu çağırıyoruz
+      const newUser = await signUp({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName!, // Formdan gelen veriler
+        lastName: data.lastName!,
+        address1: data.address1!,
+        city: data.city!,
+        postalCode: data.postalCode!,
+        dateOfBirth: data.dateOfBirth!,
+        ssn: data.ssn!,
+      });
+
+      // 2. Başarılı olursa kullanıcıyı duruma (state) kaydediyoruz
+      if(newUser) setUser(newUser);
+    }
+
+    if (type === 'sign-in') {
+      // 1. Supabase giriş fonksiyonumuzu çağırıyoruz
+      const response = await signIn({
+        email: data.email,
+        password: data.password,
+      });
+
+      // 2. Başarılı giriş olursa ana sayfaya yönlendiriyoruz
+      if(response) router.push('/');
+    }
+  } catch (error) {
+    console.log("Form gönderilirken hata:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
  
 
   return (
@@ -115,7 +148,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
             />
             <CustomInput
         control={form.control}
-        name="address"
+        name="address1"
         label="Adres"
         placeholder="Adresinizi girin"
       />
