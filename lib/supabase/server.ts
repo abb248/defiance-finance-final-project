@@ -6,8 +6,16 @@ export async function createSessionClient() {
   const cookieStore = await cookies()
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    (() => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!url) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_URL')
+      return url
+    })(),
+    (() => {
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!key) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      return key
+    })(),
     {
       cookies: {
         getAll() {
@@ -30,8 +38,16 @@ export async function createSessionClient() {
 // Bu, veritabanına "patron" yetkisiyle girer.
 export async function createAdminClient() {
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, //  Anon değil
+    (() => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!url) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_URL')
+      return url
+    })(),
+    (() => {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (!key) throw new Error('Missing env: SUPABASE_SERVICE_ROLE_KEY')
+      return key
+    })(), //  Anon değil
     {
       cookies: {
         getAll() { return [] },

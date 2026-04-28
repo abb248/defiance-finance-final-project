@@ -18,7 +18,8 @@ import { Loader2 } from "lucide-react"
 const AuthForm = ({ type }: { type: 'sign-in' | 'sign-up' }) => {
   const router = useRouter();
   const [user, setUser] = useState(null);
-const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
   const formSchema = authFormSchema(type);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -28,7 +29,7 @@ const [isLoading, setIsLoading] = useState(false)
       password: '',
       firstName: '',
       lastName: '',
-      address1: '',
+      address: '',
       state: '',
      postalCode: '',
      dateOfBirth: '',
@@ -39,38 +40,52 @@ const [isLoading, setIsLoading] = useState(false)
 
 const onSubmit = async (data: z.infer<typeof formSchema>) => {
   setIsLoading(true);
+  setFormError(null);
 
   try {
     if (type === 'sign-up') {
       // 1. Supabase kayıt fonksiyonumuzu çağırıyoruz
-      const newUser = await signUp({
+      const result = await signUp({
         email: data.email,
         password: data.password,
         firstName: data.firstName!, // Formdan gelen veriler
         lastName: data.lastName!,
-        address1: data.address1!,
-        city: data.city!,
+        address: data.address!,
+        state: data.state!,
         postalCode: data.postalCode!,
         dateOfBirth: data.dateOfBirth!,
         ssn: data.ssn!,
       });
 
       // 2. Başarılı olursa kullanıcıyı duruma (state) kaydediyoruz
-      if(newUser) setUser(newUser);
+      if (result?.error) {
+        setFormError(result.error);
+      } else if (result?.user) {
+        setUser(result.user as any);
+      } else {
+        setFormError('Kayıt başarısız. Lütfen tekrar deneyin.');
+      }
     }
 
     if (type === 'sign-in') {
       // 1. Supabase giriş fonksiyonumuzu çağırıyoruz
-      const response = await signIn({
+      const result = await signIn({
         email: data.email,
         password: data.password,
       });
 
       // 2. Başarılı giriş olursa ana sayfaya yönlendiriyoruz
-      if(response) router.push('/');
+      if (result?.error) {
+        setFormError(result.error);
+      } else if (result?.user) {
+        router.push('/');
+      } else {
+        setFormError('Giriş başarısız. Lütfen tekrar deneyin.');
+      }
     }
   } catch (error) {
     console.log("Form gönderilirken hata:", error);
+    setFormError('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
   } finally {
     setIsLoading(false);
   }
@@ -115,7 +130,12 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form
+            onSubmit={form.handleSubmit(onSubmit, () => {
+              setFormError('Lütfen formdaki hataları düzeltin.');
+            })}
+            className="space-y-8"
+          >
             {type === 'sign-up' && (
               <div className="flex gap-4">
                 <CustomInput
@@ -148,10 +168,16 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
             />
             <CustomInput
         control={form.control}
-        name="address1"
+        name="address"
         label="Adres"
         placeholder="Adresinizi girin"
       />
+            <CustomInput
+              control={form.control}
+              name="state"
+              label="Şehir/Eyalet"
+              placeholder="Örn: Ankara"
+            />
         <CustomInput
           control={form.control}
           name="ssn"
@@ -187,6 +213,10 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
     'Kayıt Ol'
   )}
 </Button>
+
+            {formError ? (
+              <p className="text-sm text-red-600">{formError}</p>
+            ) : null}
           </form>
         </Form>
         

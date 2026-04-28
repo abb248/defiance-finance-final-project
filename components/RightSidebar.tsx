@@ -6,8 +6,8 @@ import BankCard from '@/components/ui/BankCard'
 
 type RightSidebarProps = {
   user: {
-    firstName: string
-    lastName: string
+    firstName?: string
+    lastName?: string
     email: string
   }
   transactions?: any[]
@@ -16,6 +16,12 @@ type RightSidebarProps = {
 
 
 const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
+  const firstInitial = (user?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || 'U').toUpperCase()
+  const fullName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+    user?.email ||
+    'User'
+
   return (
     <aside className="right-sidebar">
       <section className="flex flex-col pb-8">
@@ -24,13 +30,13 @@ const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
         <div className="profile">
           <div className="profile-img">
             <span className="text-5xl font-bold text-blue-500">
-              {user.firstName[0]}
+              {firstInitial}
             </span>
           </div>
 
           <div className="profile-details">
             <h1 className="profile-name">
-              {user.firstName} {user.lastName}
+              {fullName}
             </h1>
 
             <p className="profile-email">
