@@ -15,4 +15,4 @@ export const createClient = () =>
   )
 
 // Mevcut kodlarınla çakışmaması için:
-export const supabase = createClient()
+export const supabase = createClient()  

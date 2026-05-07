@@ -48,7 +48,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
       firstName: userData.firstName,
       lastName: userData.lastName,
       // farklı isimlendirmeler için hepsini payload'a koyup
-      // DB'nin tanımadığı kolonları hata geldikçe çıkaracağız
+      // DB'nin tanımadığı kolonları hata geldikçe çıkar
       postalCode: userData.postalCode,
       postal_code: userData.postalCode,
       dateOfBirth: userData.dateOfBirth,
@@ -77,7 +77,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     };
 
     let dbError: any = null;
-    // eksik kolon hatası geldikçe o kolonu çıkarıp tekrar dene
+    // eksik kolon hatası geldikçe o kolonu çıkarıp tekrar denemek için
     for (let i = 0; i < 12; i++) {
       const { error } = await admin.from('users').insert(row);
       if (!error) {
@@ -146,13 +146,10 @@ export const getLoggedInUser = async () => {
     if (!user) return null;
 
     // Kullanıcının tablodaki profil detaylarını çek (adres, ssn vb.)
-    // Not: kolon isimleri projeden projeye değişebildiği için birkaç olası key deniyoruz.
     const candidateKeys = ['userId', 'user_id', 'auth_user_id'] as const;
     let userProfile: any = null;
 
     for (const key of candidateKeys) {
-      // Supabase client generic tipleri burada TS'yi aşırı derinleştirebiliyor.
-      // Bu akış için basit any cast ile runtime davranışını garanti ediyoruz.
       const query = (supabase as any).from('users').select('*').eq(key, user.id);
       const { data, error } = await query.maybeSingle();
 
@@ -161,7 +158,7 @@ export const getLoggedInUser = async () => {
       const isMissingColumn = msg.includes("Could not find the '") && msg.includes("column of 'users'");
       if (error && isMissingColumn) continue;
 
-      // başka hata varsa logla ama auth'u yine de döndür (UI patlamasın)
+      // başka hata varsa logla ama auth'u yine de döndür (UI patlamaması için)
       if (error) {
         console.error('Kullanıcı profili çekilemedi:', error);
         break;
