@@ -1,6 +1,7 @@
 'use server';
 
 import { createAdminClient, createSessionClient } from "@/lib/supabase/server";
+import { createStripeCustomer } from "./stripe.actions";
 
 // --- TİP TANIMLAMALARI (Hataları önlemek için) ---
 interface SignUpParams {
@@ -36,8 +37,15 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
       email,
       password,
     });
-
+    
     if (authError) throw authError;
+
+    // YENİ ADIM: STRIPE MÜŞTERİSİ OLUŞTURUYORUZ!
+    // Supabase kaydı başarılıysa, Stripe'da bu kullanıcı için bir cüzdan açıyoruz
+    const stripeCustomer = await createStripeCustomer({
+      name: `${userData.firstName} ${userData.lastName}`,
+      email: userData.email,
+    });
 
     // ADIM B: 'users' tablosuna detayları ekleme
     const admin = await createAdminClient();
@@ -45,21 +53,23 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
-        // farklı isimlendirmeler için hepsini payload'a koyup
+      // farklı isimlendirmeler için hepsini payload'a koyup
       // DB'nin tanımadığı kolonları hata geldikçe çıkar
       postalCode: userData.postalCode,
       postal_code: userData.postalCode,
       dateOfBirth: userData.dateOfBirth,
       date_of_birth: userData.dateOfBirth,
       ssn: userData.ssn,
-      userID: authData.user?.id, // Supabase tablosundaki asıl kolon
+      userID: authData.user?.id, 
       userId: authData.user?.id, 
       user_id: authData.user?.id,
-      paymentCustomerId: 'pending',
-      payment_customer_id: 'pending',
-      paymentCustomerUrl: 'pending',
-      payment_customer_url: 'pending',
+      // 'pending' YERİNE STRIPE BİLGİLERİNİ GİRİYORUZ!
+      paymentCustomerId: stripeCustomer.id,
+      payment_customer_id: stripeCustomer.id,
+      paymentCustomerUrl: `https://dashboard.stripe.com/test/customers/${stripeCustomer.id}`,
+      payment_customer_url: `https://dashboard.stripe.com/test/customers/${stripeCustomer.id}`,
     } as Record<string, any>;
+    
     // adres/şehir isimleri projeden projeye değişebiliyor, o yüzden ikisini de ekliyoruz
     let row: Record<string, any> = {
       ...baseRow,
@@ -116,6 +126,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     return { user: null, error: message };
   }
 }
+
 
 // 2. GİRİŞ YAP
 export const signIn = async ({ email, password }: signInProps): Promise<ActionResult<any>> => {

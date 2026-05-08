@@ -29,30 +29,35 @@ const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
   const handleAddBank = async () => {
     try {
       console.log("1. İstek atılıyor: ", user.email);
-      
+
       // 1. Müşteri Oluştur
       const customer = await createSaltEdgeCustomer(user.email);
-      
-      if (!customer || !customer.id) {
+      console.log("2. Salt Edge customer:", customer);
+
+      const customerId = customer?.customer_id || customer?.id;
+      if (!customer || !customerId) {
         alert("HATA: Salt Edge müşteri oluşturamadı! VS Code terminaline (siyah ekrana) bak, API hatası dönmüş olabilir.");
         return;
       }
 
       // 2. Link Üret
-      const connectUrl = await createConnectSession(customer.id);
-      
+      const connectUrl = await createConnectSession(String(customerId), window.location.origin);
+      console.log("3. Salt Edge connect_url:", connectUrl);
+
       if (!connectUrl) {
         alert("HATA: Müşteri oluştu ama Salt Edge banka linki vermedi! VS Code terminalini kontrol et.");
         return;
       }
 
       // 3. Başarılıysa Yönlendir
-      alert("Başarılı! Salt Edge ekranına yönlendiriliyorsun...");
-      router.push(connectUrl);
+      // Salt Edge connect_url harici bir domain olabiliyor; Next router.push bazen engelleyebiliyor.
+      window.location.assign(connectUrl);
 
     } catch (error) {
       console.error("Banka bağlama ekranı açılamadı", error);
-      alert("Beklenmeyen bir hata oluştu. Tarayıcıda F12'ye basıp Console sekmesine bak.");
+      const message =
+        error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error');
+      alert(`Beklenmeyen bir hata oluştu: ${message}\n\nTarayıcıda F12 → Console ve terminali kontrol et.`);
     }
   }
   return (
@@ -83,8 +88,9 @@ const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
           <h2 className="header-2">My Banks</h2>
 
           {/* Link yerine Button kullandık ve onClick ekledik */}
-          <button 
-            onClick={handleAddBank} 
+          <button
+            type="button"
+            onClick={handleAddBank}
             className="flex gap-2 items-center cursor-pointer bg-transparent border-none p-0"
           >
             <Image

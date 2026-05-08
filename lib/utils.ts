@@ -47,3 +47,4 @@ export const authFormSchema = (type: 'sign-in' | 'sign-up') =>
 
     password: z.string().min(8, { message: "Şifre en az 8 karakter olmalıdır." }),
   })
+  export const parseStringify = (value: any) => JSON.parse(JSON.stringify(value));
