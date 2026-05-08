@@ -29,7 +29,6 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
   const { email } = userData;
 
   try {
-    
     const supabase = await createSessionClient();
 
     // ADIM A: Supabase Auth kaydı
@@ -41,28 +40,27 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     if (authError) throw authError;
 
     // ADIM B: 'users' tablosuna detayları ekleme
-    // Not: RLS açık olabileceği için admin client ile insert yapıyoruz.
     const admin = await createAdminClient();
     const baseRow = {
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      // farklı isimlendirmeler için hepsini payload'a koyup
+        // farklı isimlendirmeler için hepsini payload'a koyup
       // DB'nin tanımadığı kolonları hata geldikçe çıkar
       postalCode: userData.postalCode,
       postal_code: userData.postalCode,
       dateOfBirth: userData.dateOfBirth,
       date_of_birth: userData.dateOfBirth,
       ssn: userData.ssn,
-      userId: authData.user?.id,
+      userID: authData.user?.id, // Supabase tablosundaki asıl kolon
+      userId: authData.user?.id, 
       user_id: authData.user?.id,
       paymentCustomerId: 'pending',
       payment_customer_id: 'pending',
       paymentCustomerUrl: 'pending',
       payment_customer_url: 'pending',
     } as Record<string, any>;
-
-    // adres/şehir isimleri projeden projeye değişebiliyor
+    // adres/şehir isimleri projeden projeye değişebiliyor, o yüzden ikisini de ekliyoruz
     let row: Record<string, any> = {
       ...baseRow,
       address: userData.address,
@@ -71,14 +69,20 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
       state: userData.state,
     };
 
+    // Hata mesajından eksik kolonu parse edip ona göre denemek için bir fonksiyon
     const parseMissingColumn = (msg: string) => {
-      const m = msg.match(/Could not find the '([^']+)' column of 'users'/);
-      return m?.[1] ?? null;
+      // Örn: "column users.userId does not exist" hatasından "userId" kısmını çeker
+      const match1 = msg.match(/column (?:users\.)?["']?([^"'\s]+)["']? does not exist/);
+      if (match1) return match1[1];
+      
+      const match2 = msg.match(/Could not find the '([^']+)' column/);
+      return match2?.[1] ?? null;
     };
 
     let dbError: any = null;
+    
     // eksik kolon hatası geldikçe o kolonu çıkarıp tekrar denemek için
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 15; i++) {
       const { error } = await admin.from('users').insert(row);
       if (!error) {
         dbError = null;
@@ -88,6 +92,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
       dbError = error;
       const msg = String(error?.message || '');
       const missing = parseMissingColumn(msg);
+      
       if (!missing) break;
 
       // döngüye takılmamak için gerçekten payload'da varsa sil
@@ -145,20 +150,21 @@ export const getLoggedInUser = async () => {
     
     if (!user) return null;
 
-    // Kullanıcının tablodaki profil detaylarını çek (adres, ssn vb.)
-    const candidateKeys = ['userId', 'user_id', 'auth_user_id'] as const;
+    // Kullanıcının tablodaki profil detaylarını çek
+    const candidateKeys = ['userID', 'userId', 'user_id', 'auth_user_id'] as const;
     let userProfile: any = null;
 
     for (const key of candidateKeys) {
       const query = (supabase as any).from('users').select('*').eq(key, user.id);
       const { data, error } = await query.maybeSingle();
 
-      // "column not found" ise diğer key'e geç
+      // Hata kodunu (42703) ve PostgreSQL hata mesajlarını doğru yakalama
       const msg = String((error as any)?.message || '');
-      const isMissingColumn = msg.includes("Could not find the '") && msg.includes("column of 'users'");
+      const code = String((error as any)?.code || '');
+      const isMissingColumn = code === '42703' || msg.includes('does not exist') || msg.includes("Could not find");
+      
       if (error && isMissingColumn) continue;
 
-      // başka hata varsa logla ama auth'u yine de döndür (UI patlamaması için)
       if (error) {
         console.error('Kullanıcı profili çekilemedi:', error);
         break;
@@ -170,7 +176,6 @@ export const getLoggedInUser = async () => {
       }
     }
 
-    // Auth ve Profil verilerini birleştirip gönder
     return JSON.parse(JSON.stringify({ ...user, ...userProfile }));
   } catch (error) {
     console.error("Kullanıcı oturumu alınamadı:", error);
