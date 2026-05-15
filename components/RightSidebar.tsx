@@ -6,16 +6,7 @@ import { useRouter } from 'next/navigation'
 import BankCard from '@/components/ui/BankCard'
 import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/saltedge.actions' // Salt Edge oturum oluşturma fonksiyonunu import ettik
 
-type RightSidebarProps = {
-  user: {
-    id?: string // Supabase user tablosunda id alanı var, ama biz kullanmayacağız. Yine de ekledim.
-    firstName?: string
-    lastName?: string
-    email: string
-  }
-  transactions?: any[]
-  banks?: any[]
-}
+
 
 const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
   const router = useRouter();

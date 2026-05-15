@@ -89,7 +89,7 @@ export const getAccounts = async ({ email }: { email: string }) => {
 
     return {
       id: String(a?.id),
-      appwriteItemId: String(a?.id), // existing pages use this as "selected account id"
+      supabaseItemId: String(a?.id), // existing pages use this as "selected account id"
       connectionId: String(a?.connection_id),
       name: a?.name || providerName || "Bank account",
       bankName: providerName || null,
@@ -109,11 +109,31 @@ export const getAccounts = async ({ email }: { email: string }) => {
   return { data: mapped, totalBanks, totalCurrentBalance };
 };
 
-export const getAccount = async ({ appwriteItemId }: { appwriteItemId: string }) => {
-  // Bu aşamada transaction akışını daha sonra tamamlayacağız.
-  // UI kırılmasın diye boş transactions dönüyoruz.
-  return {
-    data: { id: appwriteItemId },
-    transactions: [],
-  };
+export const getAccount = async ({ supabaseItemId }: { supabaseItemId: string }) => {
+  try {
+    // İleride burası Salt Edge veya veritabanından gerçek detayları çekecek.
+    // Şimdilik UI'ın kırılmaması ve kopyalama butonunun çalışması için:
+    
+    const account = {
+      id: supabaseItemId,
+      supabaseItemId: supabaseItemId,
+      shareableId: supabaseItemId, // İŞTE BUTON BURAYI KOPYALIYOR!
+      name: "Banka Hesabı", // Sayfada "null" yerine bu yazar
+      currentBalance: 0,    // Şimdilik 0, transactionlar gelince dolacak
+      officialName: "Personal Checking Account",
+      mask: "1234",
+      type: "depository",
+      subtype: "checking",
+    };
+
+    return {
+      data: account,
+      transactions: [], // Zeynep burayı doldurduğunda harcamalar görünecek
+    };
+  } catch (error) {
+    console.error("Hesap detayları alınırken hata:", error);
+    return null;
+  }
+ 
+  
 };

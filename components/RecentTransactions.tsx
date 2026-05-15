@@ -1,6 +1,6 @@
 import React from 'react'
 
-const RecentTransactions = ({ accounts, transactions, appwriteItemId, page }: any) => {
+const RecentTransactions = ({ accounts, transactions, supabaseItemId, page }: any) => {
   return (
     <section className="recent-transactions">
       <header className="flex items-center justify-between">

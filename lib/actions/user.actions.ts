@@ -194,7 +194,7 @@ export const getLoggedInUser = async () => {
   }
 }
 
-// 4. ÇIKIŞ YAP
+
 export const logoutAccount = async () => {
   try {
     const supabase = await createSessionClient();

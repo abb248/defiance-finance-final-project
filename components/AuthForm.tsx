@@ -100,10 +100,10 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
             src="/icons/logo.svg"
             width={34}
             height={34}
-            alt="SpendWise logo"
+            alt="Defiance Finance logo"
           />
           <h1 className="text-26 font-ibm-plex-serif font-bold text-green-700">
-            SpendWise
+            Defiance Finance
           </h1>
         </Link>
 
@@ -126,7 +126,6 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
 
       {user ? (
         <div className="flex flex-col gap-4">
-          {/* PlaidLink daha sonra eklenecek */}
         </div>
       ) : (
         <Form {...form}>

@@ -72,8 +72,11 @@ const config = {
       backgroundImage: {
         "bank-gradient": "linear-gradient(90deg, #0179FE 0%, #4893FF 100%)",
         "gradient-mesh": "url('/icons/gradient-mesh.svg')",
-        "bank-green-gradient":
-          "linear-gradient(90deg, #01797A 0%, #489399 100%)",
+        "bank-green-gradient": "linear-gradient(90deg, #01797A 0%, #489399 100%)",
+        "bank-purple-gradient": "linear-gradient(90deg, #6A0DAD 0%, #B366FF 100%)",
+        "bank-orange-gradient": "linear-gradient(90deg, #FF7A00 0%, #FFB266 100%)",
+        "bank-pink-gradient": "linear-gradient(90deg, #D53F8C 0%, #F687B3 100%)",
+        "bank-emerald-gradient": "linear-gradient(90deg, #047857 0%, #34D399 100%)",
       },
       boxShadow: {
         form: "0px 1px 2px 0px rgba(16, 24, 40, 0.05)",

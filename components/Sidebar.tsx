@@ -32,10 +32,10 @@ const Sidebar = ({ user }: SidebarProps) => {
             src="/icons/logo.svg"
             width={34}
             height={34}
-            alt="SpendWise logo"
+            alt="Defiance Finance logo"
             className="size-[24px] max-xl:size-14"
           />
-          <h1 className="sidebar-logo">SpendWise</h1>
+          <h1 className="sidebar-logo">De-Fi</h1>
         </Link>
 
         {sidebarLinks.map((item) => {

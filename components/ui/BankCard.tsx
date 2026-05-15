@@ -2,26 +2,35 @@ import { formatAmount } from '../../lib/utilsz'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import Copy from '@/components/Copy'
 
-type CreditCardProps = {
-  account: {
-    name?: string
-    currentBalance: number
-    [key: string]: any
-  }
-  userName: string
-  showBalance?: boolean
-}
+
+
+
+const gradients = [
+  'bg-bank-gradient',
+  'bg-bank-green-gradient',
+  'bg-bank-purple-gradient',
+  'bg-bank-orange-gradient',
+  'bg-bank-pink-gradient',
+  'bg-bank-emerald-gradient',
+];
 
 const BankCard = ({
   account,
   userName,
   showBalance = true,
+  gradientClass,
 }: CreditCardProps) => {
+  const bankIdentifier = account.bankName || account.name || 'default';
+  const hash = bankIdentifier.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+  const finalGradient = gradientClass || gradients[hash % gradients.length];
+
   return (
     <div className="flex flex-col">
-      <Link href="/" className="bank-card">
-        <div className="bank-card_content">
+      {/* 1. DEĞİŞİKLİK: Link dinamik hale getirildi */}
+      <Link href={`/transaction-history/?id=${account.supabaseItemId}`} className={`bank-card min-w-[325px] ${finalGradient}`}>
+        <div className={`bank-card_content ${finalGradient}`}>
           <div>
             <h1 className="text-16 font-semibold text-white">
               {account.name || userName}
@@ -49,7 +58,7 @@ const BankCard = ({
           </article>
         </div>
 
-        <div className="bank-card_icon">
+        <div className={`bank-card_icon ${finalGradient}`}>
           <Image
             src="/icons/Paypass.svg"
             width={20}
@@ -74,6 +83,9 @@ const BankCard = ({
           className="absolute left-0 top-0"
         />
       </Link>
+
+      {/* 2. DEĞİŞİKLİK: Copy butonu eklendi */}
+      {showBalance && <Copy title={account?.shareableId} />}
     </div>
   )
 }

@@ -14,8 +14,8 @@ const ibmPlexSerif = IBM_Plex_Serif({
 
 export function generateMetadata(): Metadata {
   return {
-    title: "SpendWise",
-    description: "SpendWise is a modern banking and financial management platform for everyone.",
+    title: "Defiance Finance",
+    description: "Defiance Finance is a modern banking and financial management platform for everyone.",
     icons: {
       icon: '/icons/logo.svg'
     },
