@@ -2,39 +2,45 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase URL ve Service Role Key'ini çekiyoruz
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; 
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const createTransaction = async (transactionData: any) => {
+export const createTransaction = async (transactionData: TransferTransactionData) => {
   try {
-    // TAM OLARAK SENİN FOTOĞRAFTAKİ SÜTUN İSİMLERİNE GÖRE YAZIYORUZ:
+    const description = [
+      transactionData.name || "Online Transfer",
+      `From: ${transactionData.senderId}`,
+      `Sent to: ${transactionData.receiverId}`,
+      transactionData.note ? `Note: ${transactionData.note}` : null,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+
     const { data, error } = await supabase
       .from("transactions")
       .insert([
         {
-          amount: transactionData.amount, // Numeric sütun
-          currency: "TRY", // Text sütun
-          status: "success", // Text sütun
-          type: "transfer", // Text sütun
-          recipient_email: transactionData.email, // Text sütun
-          // receiverId (Shareable ID) bilgisini kaybetmemek için description içine gömüyoruz:
-          description: `Online Transfer - Sent to: ${transactionData.receiverId}`, 
+          amount: transactionData.amount,
+          currency: "TRY",
+          status: "success",
+          type: "transfer",
+          recipient_email: transactionData.email,
+          description,
         },
-      ]);
+      ])
+      .select()
+      .single();
 
     if (error) {
-      console.error("Supabase Insert Error Detayı:", error);
+      console.error("Supabase insert error:", error);
       throw error;
     }
 
-    console.log("Supabase'e işlem BAŞARIYLA kaydedildi:", data);
-    return JSON.parse(JSON.stringify(data || {})); 
-    
+    return JSON.parse(JSON.stringify(data || {}));
   } catch (error) {
-    console.error("İşlem kaydedilirken hata oluştu:", error);
+    console.error("Transaction could not be saved:", error);
     return null;
   }
 };

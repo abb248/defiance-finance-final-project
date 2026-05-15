@@ -3,11 +3,9 @@
 import { createSaltEdgeCustomer } from "@/lib/actions/saltedge.actions";
 import { createClient } from "@supabase/supabase-js";
 
-// --- SUPABASE BAĞLANTISI EKLENDİ ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
-// -----------------------------------
 
 const requireEnv = (key: string) => {
   const value = process.env[key];
@@ -98,6 +96,29 @@ const mapSaltEdgeTransaction = (transaction: any) => {
   };
 };
 
+const mapLocalTransaction = (transaction: any, accountId: string) => {
+  const description = String(transaction.description || "Online Transfer");
+  const amount = Math.abs(Number(transaction.amount) || 0);
+  const isIncoming =
+    description.includes(`Sent to: ${accountId}`) &&
+    !description.includes(`From: ${accountId}`);
+
+  return {
+    id: String(transaction.id),
+    accountId,
+    name: description,
+    amount,
+    signedAmount: isIncoming ? amount : -amount,
+    type: isIncoming ? "credit" : "debit",
+    status: transaction.status || "success",
+    date: transaction.created_at || new Date().toISOString(),
+    paymentChannel: "online",
+    category: "Transfer",
+    currencyCode: transaction.currency || "TRY",
+    raw: transaction,
+  };
+};
+
 export const getAccounts = async ({ email }: { email: string }) => {
   const customer = await createSaltEdgeCustomer(email);
   const customerId = customer?.customer_id;
@@ -170,37 +191,30 @@ export const getAccount = async ({
       };
     }
 
-    // 1. Salt Edge'den işlemleri çekiyoruz
     const transactions = await paginate("/transactions", {
       connection_id: String(connectionId),
       account_id: String(supabaseItemId),
       per_page: "100",
     });
 
-    // 2. Supabase'den SENİN GERÇEK TRANSFERLERİNİ çekiyoruz
-    const { data: dbTransactions } = await supabase
+    const localTransferFilter = [
+      `description.ilike.%From: ${supabaseItemId}%`,
+      `description.ilike.%Sent to: ${supabaseItemId}%`,
+    ].join(",");
+
+    const { data: dbTransactions, error: dbTransactionsError } = await supabase
       .from("transactions")
-      .select("*");
+      .select("*")
+      .or(localTransferFilter);
 
-    // 3. Supabase'den gelen verileri UI tablosunun anlayacağı formata çeviriyoruz
-    const mappedDbTransactions = (dbTransactions || []).map((t: any) => ({
-      id: String(t.id),
-      accountId: String(supabaseItemId),
-      name: t.description || "Online Transfer",
-      amount: Math.abs(Number(t.amount) || 0),
-      signedAmount: -(Number(t.amount) || 0), // Transfer yaptığın için hesaptan para çıkıyor (eksi)
-      type: "debit",
-      status: t.status || "success",
-      date: t.created_at || new Date().toISOString(),
-      paymentChannel: "online",
-      category: "Transfer",
-      currencyCode: t.currency || "TRY",
-      raw: t,
-    }));
+    if (dbTransactionsError) {
+      console.error("Supabase transactions could not be fetched:", dbTransactionsError);
+    }
 
-    // 4. İki listeyi BİRLEŞTİRİYORUZ (Merge işlemi)
     const allTransactions = [
-      ...mappedDbTransactions,
+      ...(dbTransactions || []).map((transaction: any) =>
+        mapLocalTransaction(transaction, String(supabaseItemId))
+      ),
       ...transactions.map(mapSaltEdgeTransaction),
     ];
 
@@ -209,7 +223,7 @@ export const getAccount = async ({
       transactions: allTransactions,
     };
   } catch (error) {
-    console.error("Hesap detaylari alinirken hata:", error);
+    console.error("Account details could not be fetched:", error);
     return null;
   }
 };

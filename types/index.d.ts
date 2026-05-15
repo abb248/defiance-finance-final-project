@@ -119,3 +119,12 @@ declare type CategoryProps = {
   category: CategoryCount;
   index: number;
 };
+
+declare type TransferTransactionData = {
+  name: string;
+  amount: number;
+  senderId: string;
+  receiverId: string;
+  email: string;
+  note?: string;
+};

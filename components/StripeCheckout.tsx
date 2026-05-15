@@ -8,7 +8,13 @@ import {
 } from '@stripe/react-stripe-js'
 import { Button } from './ui/button'
 
-const StripeCheckout = ({ amount, onCancel }: { amount: number; onCancel: () => void }) => {
+type StripeCheckoutProps = {
+  amount: number
+  onCancel: () => void
+  onSuccess: () => Promise<void>
+}
+
+const StripeCheckout = ({ amount, onCancel, onSuccess }: StripeCheckoutProps) => {
   const stripe = useStripe()
   const elements = useElements()
 
@@ -23,6 +29,7 @@ const StripeCheckout = ({ amount, onCancel }: { amount: number; onCancel: () => 
     }
 
     setIsLoading(true)
+    setErrorMessage(null)
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -34,10 +41,24 @@ const StripeCheckout = ({ amount, onCancel }: { amount: number; onCancel: () => 
 
     if (error) {
       setErrorMessage(error.message || 'An unexpected error occurred.')
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      window.location.href = '/payment-transfer?success=true'
+      setIsLoading(false)
+      return
     }
 
+    if (paymentIntent && paymentIntent.status === 'succeeded') {
+      try {
+        await onSuccess()
+      } catch (saveError: any) {
+        setErrorMessage(saveError?.message || 'Payment succeeded, but transaction history could not be updated.')
+        setIsLoading(false)
+        return
+      }
+
+      window.location.href = '/payment-transfer?success=true'
+      return
+    }
+
+    setErrorMessage('Payment could not be completed. Please try again.')
     setIsLoading(false)
   }
 
@@ -46,7 +67,7 @@ const StripeCheckout = ({ amount, onCancel }: { amount: number; onCancel: () => 
       <div className="flex flex-col gap-2 border-b border-gray-200 pb-4">
         <h2 className="text-18 font-semibold text-gray-900">Secure Checkout</h2>
         <p className="text-14 text-gray-600">
-          Enter your card details to complete the transfer of ₺{amount.toFixed(2)}
+          Enter your card details to complete the transfer of TRY {amount.toFixed(2)}
         </p>
       </div>
 
@@ -73,7 +94,7 @@ const StripeCheckout = ({ amount, onCancel }: { amount: number; onCancel: () => 
           disabled={isLoading || !stripe || !elements}
           className="payment-transfer_btn"
         >
-          {isLoading ? 'Processing...' : `Pay ₺${amount.toFixed(2)}`}
+          {isLoading ? 'Processing...' : `Pay TRY ${amount.toFixed(2)}`}
         </Button>
       </div>
     </form>

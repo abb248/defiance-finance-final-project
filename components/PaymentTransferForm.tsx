@@ -50,6 +50,8 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
     success: boolean
     message: string
   } | null>(null)
+  const [pendingTransfer, setPendingTransfer] =
+    useState<TransferTransactionData | null>(null)
 
   const form = useForm<PaymentTransferFormValues>({
     resolver: zodResolver(paymentTransferSchema),
@@ -78,20 +80,14 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       })
 
       if (result && result.client_secret) {
-  
-        try {
-          await createTransaction({
-            name: "Online Transfer",
-            amount: amount,
-            senderId: data.senderBankId,
-            receiverId: data.shareableId,
-            email: data.email,
-          });
-          console.log("Supabase'e başarıyla yazıldı!");
-        } catch (dbError) {
-          console.error("Veritabanına yazarken hata:", dbError);
-        }
-        
+        setPendingTransfer({
+          name: "Online Transfer",
+          amount,
+          senderId: data.senderBankId,
+          receiverId: data.shareableId,
+          email: data.email,
+          note: data.note,
+        })
         setClientSecret(result.client_secret)
         setTransferAmount(amount)
       } else {
@@ -126,9 +122,21 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       <Elements stripe={stripePromise} options={{ clientSecret }}>
         <StripeCheckout
           amount={transferAmount}
+          onSuccess={async () => {
+            if (!pendingTransfer) {
+              throw new Error('Transfer details could not be found.')
+            }
+
+            const savedTransaction = await createTransaction(pendingTransfer)
+
+            if (!savedTransaction) {
+              throw new Error('Payment succeeded, but transaction history could not be updated.')
+            }
+          }}
           onCancel={() => {
             setClientSecret(null)
             setTransferAmount(0)
+            setPendingTransfer(null)
           }}
         />
       </Elements>
