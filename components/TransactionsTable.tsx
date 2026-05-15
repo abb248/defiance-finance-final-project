@@ -39,6 +39,24 @@ const categoryStyles: Record<
     text: "text-success-700",
     dot: "bg-success-600",
   },
+  "food and drink": {
+    border: "border-[#F04438]",
+    bg: "bg-[#FEF3F2]",
+    text: "text-[#B42318]",
+    dot: "bg-[#F04438]",
+  },
+  shopping: {
+    border: "border-[#7F56D9]",
+    bg: "bg-[#F4F3FF]",
+    text: "text-[#6941C6]",
+    dot: "bg-[#7F56D9]",
+  },
+  "bank fees": {
+    border: "border-[#667085]",
+    bg: "bg-gray-100",
+    text: "text-gray-700",
+    dot: "bg-gray-500",
+  },
   uncategorized: {
     border: "border-gray-300",
     bg: "bg-gray-25",

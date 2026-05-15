@@ -73,12 +73,67 @@ const paginate = async (path: string, params: Record<string, string>) => {
   return all;
 };
 
+const inferTransactionCategory = ({
+  category,
+  description,
+  paymentChannel,
+  amount,
+}: {
+  category?: string | null;
+  description: string;
+  paymentChannel?: string | null;
+  amount: number;
+}) => {
+  const existingCategory = String(category || "").trim();
+  if (
+    existingCategory &&
+    !["uncategorized", "unknown", "other"].includes(existingCategory.toLowerCase())
+  ) {
+    return existingCategory;
+  }
+
+  const text = `${description} ${paymentChannel || ""}`.toLowerCase();
+
+  if (amount > 0) return "Payment";
+
+  if (
+    /restaurant|cafe|coffee|wine|bar|lounge|noodle|spice|fruit|market|food|grocery|applegreen/.test(
+      text
+    )
+  ) {
+    return "Food and Drink";
+  }
+
+  if (/airline|hotel|travel|uber|lyft|taxi|train|rail|booking/.test(text)) {
+    return "Travel";
+  }
+
+  if (/transfer|sent to|online banking/.test(text)) {
+    return "Transfer";
+  }
+
+  if (/bill|payment|direct debit|water|gas|digital|communication|utility/.test(text)) {
+    return "Payment";
+  }
+
+  if (/amazon|adobe|purchase|retail|gallery/.test(text)) {
+    return "Shopping";
+  }
+
+  if (/fee|charge|interest/.test(text)) {
+    return "Bank Fees";
+  }
+
+  return "Payment";
+};
+
 const mapSaltEdgeTransaction = (transaction: any) => {
   const amount = Number(transaction?.amount || 0);
   const description =
     transaction?.description ||
     transaction?.extra?.original_amount ||
     "Bank transaction";
+  const paymentChannel = transaction?.extra?.posting_method || transaction?.mode || "other";
 
   return {
     id: String(transaction?.id),
@@ -89,8 +144,13 @@ const mapSaltEdgeTransaction = (transaction: any) => {
     type: amount < 0 ? "debit" : "credit",
     status: transaction?.status || "posted",
     date: transaction?.made_on || transaction?.created_at || transaction?.updated_at,
-    paymentChannel: transaction?.extra?.posting_method || transaction?.mode || "other",
-    category: transaction?.category || "Uncategorized",
+    paymentChannel,
+    category: inferTransactionCategory({
+      category: transaction?.category,
+      description,
+      paymentChannel,
+      amount,
+    }),
     currencyCode: transaction?.currency_code || null,
     raw: transaction,
   };
