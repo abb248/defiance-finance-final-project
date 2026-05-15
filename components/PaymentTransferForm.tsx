@@ -12,6 +12,7 @@ import { createTransfer } from '@/lib/actions/stripe.actions'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import StripeCheckout from './StripeCheckout'
+import { createTransaction } from "@/lib/actions/transactions.actions";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -77,6 +78,20 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       })
 
       if (result && result.client_secret) {
+  
+        try {
+          await createTransaction({
+            name: "Online Transfer",
+            amount: amount,
+            senderId: data.senderBankId,
+            receiverId: data.shareableId,
+            email: data.email,
+          });
+          console.log("Supabase'e başarıyla yazıldı!");
+        } catch (dbError) {
+          console.error("Veritabanına yazarken hata:", dbError);
+        }
+        
         setClientSecret(result.client_secret)
         setTransferAmount(amount)
       } else {

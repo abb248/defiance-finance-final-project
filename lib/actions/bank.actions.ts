@@ -1,6 +1,13 @@
 "use server";
 
 import { createSaltEdgeCustomer } from "@/lib/actions/saltedge.actions";
+import { createClient } from "@supabase/supabase-js";
+
+// --- SUPABASE BAĞLANTISI EKLENDİ ---
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+// -----------------------------------
 
 const requireEnv = (key: string) => {
   const value = process.env[key];
@@ -163,15 +170,43 @@ export const getAccount = async ({
       };
     }
 
+    // 1. Salt Edge'den işlemleri çekiyoruz
     const transactions = await paginate("/transactions", {
       connection_id: String(connectionId),
       account_id: String(supabaseItemId),
       per_page: "100",
     });
 
+    // 2. Supabase'den SENİN GERÇEK TRANSFERLERİNİ çekiyoruz
+    const { data: dbTransactions } = await supabase
+      .from("transactions")
+      .select("*");
+
+    // 3. Supabase'den gelen verileri UI tablosunun anlayacağı formata çeviriyoruz
+    const mappedDbTransactions = (dbTransactions || []).map((t: any) => ({
+      id: String(t.id),
+      accountId: String(supabaseItemId),
+      name: t.description || "Online Transfer",
+      amount: Math.abs(Number(t.amount) || 0),
+      signedAmount: -(Number(t.amount) || 0), // Transfer yaptığın için hesaptan para çıkıyor (eksi)
+      type: "debit",
+      status: t.status || "success",
+      date: t.created_at || new Date().toISOString(),
+      paymentChannel: "online",
+      category: "Transfer",
+      currencyCode: t.currency || "TRY",
+      raw: t,
+    }));
+
+    // 4. İki listeyi BİRLEŞTİRİYORUZ (Merge işlemi)
+    const allTransactions = [
+      ...mappedDbTransactions,
+      ...transactions.map(mapSaltEdgeTransaction),
+    ];
+
     return {
       data: currentAccount,
-      transactions: transactions.map(mapSaltEdgeTransaction),
+      transactions: allTransactions,
     };
   } catch (error) {
     console.error("Hesap detaylari alinirken hata:", error);
