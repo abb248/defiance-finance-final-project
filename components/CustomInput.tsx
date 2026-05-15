@@ -43,10 +43,9 @@ const CustomInput = ({
                 type={
                   name === 'password'
                     ? 'password'
-                    : name === 'email'
-                    ? 'email'
                     : 'text'
                 }
+                inputMode={name === 'email' ? 'email' : undefined}
                 {...field}
               />
             </FormControl>

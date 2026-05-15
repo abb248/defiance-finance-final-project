@@ -108,7 +108,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
         </Link>
 
         <div className="flex flex-col gap-1 md:gap-3">
-          <h1 className="text-24 lg:text-36 font-semibold text-gray-900">
+          <h1 className="text-24 lg:text-36 font-semibold text-white">
             {user
               ? 'Hesabı Bağla'
               : type === 'sign-in'
@@ -116,7 +116,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
               : 'Kayıt Ol'}
           </h1>
 
-          <p className="text-16 font-normal text-gray-600">
+          <p className="text-16 font-normal text-gray-300">
             {user
               ? 'Başlamak için hesabınızı bağlayın'
               : 'Lütfen bilgilerinizi giriniz'}
@@ -165,6 +165,8 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
               label="Şifre"
               placeholder="Şifrenizi girin"
             />
+            {type === 'sign-up' && (
+              <>
             <CustomInput
         control={form.control}
         name="address"
@@ -195,6 +197,8 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
           label="Posta Kodu"
           placeholder="Örn: 06540"
         />
+              </>
+            )}
         
            <Button
   type="submit"
@@ -221,7 +225,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
         
       )}
       <footer className="flex justify-center gap-1">
-  <p className="text-14 font-normal text-gray-600">
+  <p className="text-14 font-normal text-gray-300">
     {type === 'sign-in'
       ? "Hesabın yok mu?"
       : "Zaten hesabın var mı?"}
