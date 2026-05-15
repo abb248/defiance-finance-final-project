@@ -5,6 +5,8 @@ import BankInfo from "./BankInfo";
 import BankTabItem from "./BankTabItem";
 import TransactionsTable from "./TransactionsTable";
 
+const VISIBLE_ACCOUNT_TABS = 3;
+
 const RecentTransactions = ({
   accounts = [],
   transactions = [],
@@ -14,6 +16,12 @@ const RecentTransactions = ({
     accounts.find((account) => account.supabaseItemId === supabaseItemId) ||
     accounts[0];
   const activeId = activeAccount?.supabaseItemId || supabaseItemId;
+  const visibleAccounts = accounts.slice(0, VISIBLE_ACCOUNT_TABS);
+  const accountsToShow =
+    activeAccount &&
+    !visibleAccounts.some((account) => account.supabaseItemId === activeId)
+      ? [...visibleAccounts.slice(0, VISIBLE_ACCOUNT_TABS - 1), activeAccount]
+      : visibleAccounts;
 
   return (
     <section className="recent-transactions">
@@ -30,7 +38,7 @@ const RecentTransactions = ({
       {accounts.length > 0 ? (
         <div className="flex flex-col gap-4">
           <div className="recent-transactions-tablist">
-            {accounts.map((account) => (
+            {accountsToShow.map((account) => (
               <BankTabItem
                 key={account.id}
                 account={account}

@@ -208,6 +208,22 @@
     @apply flex-center flex-col  gap-2 rounded-md bg-blue-25/20 px-4 py-2 text-white;
   }
 
+  .pagination {
+    @apply flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 sm:flex-row;
+  }
+
+  .pagination-btn {
+    @apply flex-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-14 font-semibold text-gray-700 transition-colors hover:bg-gray-50;
+  }
+
+  .pagination-pages {
+    @apply flex flex-wrap items-center justify-center gap-2;
+  }
+
+  .pagination-page {
+    @apply flex-center size-9 rounded-lg border text-14 font-semibold transition-colors hover:bg-gray-50;
+  }
+
   .header-box {
     @apply flex flex-col gap-1;
   }

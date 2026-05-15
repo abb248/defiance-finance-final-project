@@ -98,3 +98,11 @@ declare type TransactionTableProps = {
 declare type CategoryBadgeProps = {
   category?: string;
 };
+
+declare type PaginationProps = {
+  page: number;
+  totalPages: number;
+  query?: {
+    id?: string;
+  };
+};
