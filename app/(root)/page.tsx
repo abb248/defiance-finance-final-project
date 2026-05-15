@@ -24,10 +24,19 @@ const Home = async ({ searchParams: { id, page } }: SearchParamProps) => {
 
   if (!accounts) return;
 
-  const accountsData = accounts?.data;
+  const accountsData = accounts?.data || [];
   const supabaseItemId = (id as string) || accountsData[0]?.supabaseItemId;
+  const selectedAccount = accountsData.find(
+    (account: any) => account.supabaseItemId === supabaseItemId
+  );
 
-  const account = await getAccount({ supabaseItemId: supabaseItemId });
+  const account = supabaseItemId
+    ? await getAccount({
+        supabaseItemId,
+        connectionId: selectedAccount?.connectionId,
+        account: selectedAccount,
+      })
+    : null;
 
   return (
     <section className="home">
@@ -57,8 +66,8 @@ const Home = async ({ searchParams: { id, page } }: SearchParamProps) => {
 
       <RightSidebar
         user={loggedIn}
-        transactions={account?.transactions}
-        banks={accountsData?.slice(0, 2)}
+        transactions={account?.transactions || []}
+        banks={accountsData.slice(0, 2)}
       />
     </section>
   )

@@ -68,72 +68,113 @@ const paginate = async (path: string, params: Record<string, string>) => {
   return all;
 };
 
+const mapSaltEdgeTransaction = (transaction: any) => {
+  const amount = Number(transaction?.amount || 0);
+  const description =
+    transaction?.description ||
+    transaction?.extra?.original_amount ||
+    "Bank transaction";
+
+  return {
+    id: String(transaction?.id),
+    accountId: String(transaction?.account_id),
+    name: description,
+    amount: Math.abs(amount),
+    signedAmount: amount,
+    type: amount < 0 ? "debit" : "credit",
+    status: transaction?.status || "posted",
+    date: transaction?.made_on || transaction?.created_at || transaction?.updated_at,
+    paymentChannel: transaction?.extra?.posting_method || transaction?.mode || "other",
+    category: transaction?.category || "Uncategorized",
+    currencyCode: transaction?.currency_code || null,
+    raw: transaction,
+  };
+};
+
 export const getAccounts = async ({ email }: { email: string }) => {
-  // 1) Ensure customer exists (identifier = email)
   const customer = await createSaltEdgeCustomer(email);
   const customerId = customer?.customer_id;
   if (!customerId) return { data: [], totalBanks: 0, totalCurrentBalance: 0 };
 
-  // 2) Pull connections + accounts directly from Salt Edge
   const connections = await paginate("/connections", { customer_id: String(customerId) });
   const accounts = await paginate("/accounts", { customer_id: String(customerId) });
 
   const byConnectionId = new Map<string, any>(
-    connections.map((c: any) => [String(c?.id), c])
+    connections.map((connection: any) => [String(connection?.id), connection])
   );
 
-  // 3) Map to UI-friendly shape (BankCard expects `name` + `currentBalance`)
-  const mapped = accounts.map((a: any) => {
-    const connection = byConnectionId.get(String(a?.connection_id));
+  const mapped = accounts.map((account: any) => {
+    const connection = byConnectionId.get(String(account?.connection_id));
     const providerName = connection?.provider_name || connection?.provider_code;
 
     return {
-      id: String(a?.id),
-      supabaseItemId: String(a?.id), // existing pages use this as "selected account id"
-      connectionId: String(a?.connection_id),
-      name: a?.name || providerName || "Bank account",
+      id: String(account?.id),
+      supabaseItemId: String(account?.id),
+      shareableId: String(account?.id),
+      connectionId: String(account?.connection_id),
+      name: account?.name || providerName || "Bank account",
       bankName: providerName || null,
-      currentBalance: Number(a?.balance || 0),
-      currencyCode: a?.currency_code || null,
-      raw: a,
+      currentBalance: Number(account?.balance || 0),
+      currencyCode: account?.currency_code || null,
+      type: account?.nature || null,
+      subtype: account?.nature || null,
+      officialName: account?.extra?.account_name || account?.name || null,
+      mask: String(account?.id || "").slice(-4),
+      raw: account,
       connectionRaw: connection || null,
     };
   });
 
-  const totalBanks = new Set(connections.map((c: any) => String(c?.id))).size;
+  const totalBanks = new Set(connections.map((connection: any) => String(connection?.id))).size;
   const totalCurrentBalance = mapped.reduce(
-    (sum: number, a: any) => sum + (Number(a?.currentBalance) || 0),
+    (sum: number, account: any) => sum + (Number(account?.currentBalance) || 0),
     0
   );
 
   return { data: mapped, totalBanks, totalCurrentBalance };
 };
 
-export const getAccount = async ({ supabaseItemId }: { supabaseItemId: string }) => {
+export const getAccount = async ({
+  supabaseItemId,
+  connectionId,
+  account,
+}: {
+  supabaseItemId: string;
+  connectionId?: string | null;
+  account?: any;
+}) => {
   try {
-    // İleride burası Salt Edge veya veritabanından gerçek detayları çekecek.
-    // Şimdilik UI'ın kırılmaması ve kopyalama butonunun çalışması için:
-    
-    const account = {
+    const currentAccount = account || {
       id: supabaseItemId,
-      supabaseItemId: supabaseItemId,
-      shareableId: supabaseItemId, // İŞTE BUTON BURAYI KOPYALIYOR!
-      name: "Banka Hesabı", // Sayfada "null" yerine bu yazar
-      currentBalance: 0,    // Şimdilik 0, transactionlar gelince dolacak
-      officialName: "Personal Checking Account",
-      mask: "1234",
+      supabaseItemId,
+      shareableId: supabaseItemId,
+      name: "Bank Account",
+      currentBalance: 0,
+      officialName: "Personal Account",
+      mask: String(supabaseItemId || "").slice(-4),
       type: "depository",
       subtype: "checking",
     };
 
+    if (!connectionId) {
+      return {
+        data: currentAccount,
+        transactions: [],
+      };
+    }
+
+    const transactions = await paginate("/transactions", {
+      connection_id: String(connectionId),
+      account_id: String(supabaseItemId),
+      per_page: "100",
+    });
+
     return {
-      data: account,
-      transactions: [], // Zeynep burayı doldurduğunda harcamalar görünecek
+      data: currentAccount,
+      transactions: transactions.map(mapSaltEdgeTransaction),
     };
   } catch (error) {
-    console.error("Hesap detayları alınırken hata:", error);
+    console.error("Hesap detaylari alinirken hata:", error);
     return null;
   }
- 
-  
 };
