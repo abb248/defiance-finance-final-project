@@ -3,13 +3,16 @@
 import React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Category from '@/components/Category'
 import BankCard from '@/components/ui/BankCard'
+import { countTransactionCategories } from '@/lib/utilsz'
 import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/saltedge.actions' // Salt Edge oturum oluşturma fonksiyonunu import ettik
 
 
 
-const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
+const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps) => {
   const router = useRouter();
+  const categories = countTransactionCategories(transactions);
 
   const firstInitial = (user?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || 'U').toUpperCase()
   const fullName =
@@ -119,6 +122,26 @@ const RightSidebar = ({ user, banks = [] }: RightSidebarProps) => {
             )}
           </div>
         )}
+
+        <div className="spending-categories">
+          <h2 className="header-2">Top Categories</h2>
+
+          {categories.length > 0 ? (
+            <div className="space-y-5">
+              {categories.map((category, index) => (
+                <Category
+                  key={category.name}
+                  category={category}
+                  index={index}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-white px-4 py-5 text-center text-14 text-gray-600">
+              No spending categories yet.
+            </div>
+          )}
+        </div>
       </section>
     </aside>
   )

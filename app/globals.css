@@ -186,6 +186,22 @@
     @apply flex flex-col justify-between gap-8 px-6 py-8;
   }
 
+  .spending-categories {
+    @apply mt-6 flex flex-col gap-6;
+  }
+
+  .category {
+    @apply flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm;
+  }
+
+  .category-details {
+    @apply flex items-center gap-3;
+  }
+
+  .category-icon {
+    @apply flex-center size-10 shrink-0 rounded-full;
+  }
+
   /* My Banks */
   .my-banks {
     @apply flex h-screen max-h-screen w-full flex-col gap-8 bg-gray-25 p-8 xl:py-12;

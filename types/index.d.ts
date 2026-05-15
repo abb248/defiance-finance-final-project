@@ -106,3 +106,16 @@ declare type PaginationProps = {
     id?: string;
   };
 };
+
+declare type CategoryCount = {
+  name: string;
+  count: number;
+  totalCount: number;
+  totalAmount: number;
+  percentage: number;
+};
+
+declare type CategoryProps = {
+  category: CategoryCount;
+  index: number;
+};
