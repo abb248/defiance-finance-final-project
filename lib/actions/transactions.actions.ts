@@ -44,3 +44,21 @@ export const createTransaction = async (transactionData: TransferTransactionData
     return null;
   }
 };
+export const verifyRecipient = async (shareableId: string, email: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("users") 
+      .select("*")
+      .eq("id", shareableId) 
+      .eq("email", email)
+      .single();
+
+    if (error || !data) {
+      return false; 
+    }
+    return true; 
+  } catch (error) {
+    console.error("Güvenlik doğrulaması sırasında hata:", error);
+    return false;
+  }
+};

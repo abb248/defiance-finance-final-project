@@ -12,7 +12,8 @@ import { createTransfer } from '@/lib/actions/stripe.actions'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import StripeCheckout from './StripeCheckout'
-import { createTransaction } from "@/lib/actions/transactions.actions";
+import { createTransaction, verifyRecipient } from "@/lib/actions/transactions.actions";
+
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -69,6 +70,17 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
     setTransferResult(null)
 
     try {
+      const isMatch = await verifyRecipient(data.shareableId, data.email);
+      
+      if (!isMatch) {
+        setTransferResult({
+          success: false,
+          message: "Security Alert: The provided Shareable ID and Email Address do not match our records.",
+        });
+        setIsLoading(false);
+        return; 
+      }
+
       const amount = parseFloat(data.amount)
       const memo = data.note
         ? `To: ${data.email} | Note: ${data.note}`
