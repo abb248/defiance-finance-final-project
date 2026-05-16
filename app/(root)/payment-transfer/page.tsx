@@ -25,7 +25,7 @@ const PaymentTransfer = async () => {
       />
 
       <section className="size-full pt-5">
-        <PaymentTransferForm accounts={accountsData} />
+        <PaymentTransferForm accounts={accountsData} userEmail={loggedIn.email} />
       </section>
     </section>
   )

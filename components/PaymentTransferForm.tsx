@@ -12,7 +12,9 @@ import { createTransfer } from '@/lib/actions/stripe.actions'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import StripeCheckout from './StripeCheckout'
+import { getRecipientAccounts } from "@/lib/actions/bank.actions";
 import { createTransaction, verifyRecipient } from "@/lib/actions/transactions.actions";
+import { getAccountIdentifier } from "@/lib/utilsz";
 
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -37,13 +39,15 @@ interface BankAccount {
   bankName?: string | null
   currencyCode?: string | null
   supabaseItemId: string
+  shareableId?: string
 }
 
 interface PaymentTransferFormProps {
   accounts: BankAccount[]
+  userEmail?: string
 }
 
-const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
+const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [transferAmount, setTransferAmount] = useState<number>(0)
@@ -53,11 +57,13 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
   } | null>(null)
   const [pendingTransfer, setPendingTransfer] =
     useState<TransferTransactionData | null>(null)
+  const [recipientAccounts, setRecipientAccounts] = useState<BankAccount[]>([])
+  const [loadingRecipientAccounts, setLoadingRecipientAccounts] = useState(false)
 
   const form = useForm<PaymentTransferFormValues>({
     resolver: zodResolver(paymentTransferSchema),
     defaultValues: {
-      senderBankId: accounts?.[0]?.id || '',
+      senderBankId: accounts?.[0] ? getAccountIdentifier(accounts[0]) : '',
       note: '',
       email: '',
       shareableId: '',
@@ -65,11 +71,58 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
     },
   })
 
+  const recipientEmail = form.watch('email')
+  const senderBankId = form.watch('senderBankId')
+  const { setValue, getValues } = form
+
+  React.useEffect(() => {
+    const fetchRecipientAccounts = async () => {
+      const email = recipientEmail?.trim()
+
+      if (!email || !z.string().email().safeParse(email).success) {
+        setRecipientAccounts([])
+        setValue('shareableId', '')
+        return
+      }
+
+      setLoadingRecipientAccounts(true)
+
+      try {
+        const fetchedAccounts = await getRecipientAccounts({ email })
+        setRecipientAccounts(fetchedAccounts)
+        setValue('shareableId', '')
+      } catch {
+        setRecipientAccounts([])
+        setValue('shareableId', '')
+      } finally {
+        setLoadingRecipientAccounts(false)
+      }
+    }
+
+    const timer = setTimeout(fetchRecipientAccounts, 400)
+    return () => clearTimeout(timer)
+  }, [recipientEmail, setValue])
+
+  React.useEffect(() => {
+    if (senderBankId && getValues('shareableId') === senderBankId) {
+      setValue('shareableId', '')
+    }
+  }, [senderBankId, getValues, setValue])
+
   const onSubmit = async (data: PaymentTransferFormValues) => {
     setIsLoading(true)
     setTransferResult(null)
 
     try {
+      if (data.senderBankId === data.shareableId) {
+        setTransferResult({
+          success: false,
+          message: "Source and receiving accounts must be different.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const isMatch = await verifyRecipient(data.shareableId, data.email);
       
       if (!isMatch) {
@@ -200,6 +253,8 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
                   <FormControl>
                     <BankDropdown
                       accounts={accounts}
+                      value={field.value}
+                      placeholder="Select source account"
                       onChange={(id) => {
                         field.onChange(id || '')
                       }}
@@ -262,7 +317,7 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
                     Recipient&apos;s Email Address
                   </FormLabel>
                 </div>
-                <div className="flex w-full flex-1 flex-col">
+                <div className="flex w-full flex-1 flex-col gap-2">
                   <FormControl>
                     <Input
                       placeholder="ex: johndoe@gmail.com"
@@ -272,6 +327,17 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
                       id="recipient-email"
                     />
                   </FormControl>
+                  {userEmail ? (
+                    <button
+                      type="button"
+                      className="w-fit text-12 font-medium text-blue-600 hover:underline"
+                      onClick={() => {
+                        form.setValue("email", userEmail, { shouldValidate: true });
+                      }}
+                    >
+                      Use my email ({userEmail})
+                    </button>
+                  ) : null}
                   <FormMessage className="form-message mt-2" />
                 </div>
               </div>
@@ -287,18 +353,49 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
               <div className="payment-transfer_form-item">
                 <div className="payment-transfer_form-content">
                   <FormLabel className="text-14 font-medium text-bankGradient">
-                    Receiver&apos;s Shareable Id
+                    Receiving Account
                   </FormLabel>
+                  <p className="text-12 font-normal text-gray-600">
+                    Choose which account should receive the funds
+                  </p>
                 </div>
-                <div className="flex w-full flex-1 flex-col">
-                  <FormControl>
-                    <Input
-                      placeholder="Enter the public account number"
-                      className="input-class"
-                      {...field}
-                      id="receiver-shareable-id"
-                    />
-                  </FormControl>
+                <div className="flex w-full flex-1 flex-col gap-2">
+                  {loadingRecipientAccounts ? (
+                    <p className="text-14 text-gray-500">Loading accounts...</p>
+                  ) : recipientAccounts.length > 0 ? (
+                    <>
+                      <FormControl>
+                        <BankDropdown
+                          accounts={recipientAccounts}
+                          value={field.value}
+                          excludeAccountIds={senderBankId ? [senderBankId] : []}
+                          placeholder="Select receiving account"
+                          onChange={(id) => field.onChange(id || "")}
+                        />
+                      </FormControl>
+                      {field.value ? (
+                        <p className="text-12 text-gray-500">
+                          Shareable ID: <span className="font-medium">{field.value}</span>
+                        </p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter the public account number"
+                          className="input-class"
+                          {...field}
+                          id="receiver-shareable-id"
+                        />
+                      </FormControl>
+                      {recipientEmail && z.string().email().safeParse(recipientEmail).success ? (
+                        <p className="text-12 text-gray-500">
+                          No accounts found for this email. Enter the shareable ID manually.
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                   <FormMessage className="form-message mt-2" />
                 </div>
               </div>

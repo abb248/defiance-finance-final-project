@@ -1,5 +1,6 @@
 "use server";
 
+import { getAccounts } from "@/lib/actions/bank.actions";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -44,21 +45,41 @@ export const createTransaction = async (transactionData: TransferTransactionData
     return null;
   }
 };
+const accountMatchesShareableId = (account: Account, shareableId: string) => {
+  const accountIds = [account.shareableId, account.supabaseItemId, account.id].map(
+    (value) => String(value || "").trim()
+  );
+
+  return accountIds.includes(shareableId);
+};
+
 export const verifyRecipient = async (shareableId: string, email: string) => {
   try {
-    const { data, error } = await supabase
-      .from("users") 
-      .select("*")
-      .eq("id", shareableId) 
-      .eq("email", email)
-      .single();
+    const normalizedId = shareableId.trim();
+    const trimmedEmail = email.trim();
 
-    if (error || !data) {
-      return false; 
+    if (!normalizedId || !trimmedEmail) {
+      return false;
     }
-    return true; 
+
+    const emailsToTry = [...new Set([trimmedEmail, trimmedEmail.toLowerCase()])];
+
+    for (const tryEmail of emailsToTry) {
+      const accounts = await getAccounts({ email: tryEmail });
+      const accountsData = accounts?.data || [];
+
+      const hasMatchingAccount = accountsData.some((account: Account) =>
+        accountMatchesShareableId(account, normalizedId)
+      );
+
+      if (hasMatchingAccount) {
+        return true;
+      }
+    }
+
+    return false;
   } catch (error) {
-    console.error("Güvenlik doğrulaması sırasında hata:", error);
+    console.error("Recipient verification failed:", error);
     return false;
   }
 };

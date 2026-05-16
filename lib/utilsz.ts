@@ -5,6 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const getAccountIdentifier = (account: {
+  shareableId?: string;
+  supabaseItemId?: string;
+  id?: string;
+}) => String(account.shareableId || account.supabaseItemId || account.id || "");
+
 export const formatAmount = (amount: number) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

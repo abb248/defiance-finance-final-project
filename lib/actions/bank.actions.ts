@@ -222,6 +222,19 @@ export const getAccounts = async ({ email }: { email: string }) => {
   return { data: mapped, totalBanks, totalCurrentBalance };
 };
 
+export const getRecipientAccounts = async ({ email }: { email: string }) => {
+  try {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return [];
+
+    const accounts = await getAccounts({ email: trimmedEmail });
+    return JSON.parse(JSON.stringify(accounts?.data || []));
+  } catch (error) {
+    console.error("Recipient accounts could not be fetched:", error);
+    return [];
+  }
+};
+
 export const getAccount = async ({
   supabaseItemId,
   connectionId,
