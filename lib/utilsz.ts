@@ -70,3 +70,19 @@ export const countTransactionCategories = (transactions: Transaction[] = []) => 
     .sort((a, b) => b.totalAmount - a.totalAmount)
     .slice(0, 4);
 };
+
+export const getLatestTransactionTime = (transactions: Transaction[] = []) =>
+  transactions.reduce((latest, transaction) => {
+    const time = new Date(transaction.date || 0).getTime();
+    return time > latest ? time : latest;
+  }, 0);
+
+export const sortAccountsByRecentTransactions = (
+  accounts: Account[],
+  transactionsByAccountId: Record<string, Transaction[]>
+) =>
+  [...accounts].sort(
+    (a, b) =>
+      getLatestTransactionTime(transactionsByAccountId[b.supabaseItemId]) -
+      getLatestTransactionTime(transactionsByAccountId[a.supabaseItemId])
+  );

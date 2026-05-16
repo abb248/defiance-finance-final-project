@@ -2,14 +2,18 @@ import Link from "next/link";
 
 import { cn, formatAmount } from "@/lib/utilsz";
 
-const BankTabItem = ({ account, supabaseItemId }: BankTabItemProps) => {
+const BankTabItem = ({
+  account,
+  supabaseItemId,
+  basePath = "/",
+}: BankTabItemProps) => {
   const isActive = account.supabaseItemId === supabaseItemId;
   const title = account.name || account.bankName || "Bank account";
   const shortName = title.slice(0, 2).toUpperCase();
 
   return (
     <Link
-      href={`/?id=${account.supabaseItemId}`}
+      href={`${basePath}?id=${account.supabaseItemId}`}
       className={cn("banktab-item min-w-fit", {
         "border-blue-600 bg-blue-25": isActive,
         "border-transparent bg-white": !isActive,

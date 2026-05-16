@@ -1,14 +1,16 @@
 import Link from "next/link";
-import React from "react";
 
 import BankInfo from "./BankInfo";
 import BankTabItem from "./BankTabItem";
+import HomeAccountMoreSelect from "./HomeAccountMoreSelect";
 import TransactionsTable from "./TransactionsTable";
 
-const VISIBLE_ACCOUNT_TABS = 3;
+const FEATURED_ACCOUNTS_COUNT = 3;
+const RECENT_TRANSACTIONS_LIMIT = 5;
 
 const RecentTransactions = ({
   accounts = [],
+  featuredAccounts = [],
   transactions = [],
   supabaseItemId,
 }: RecentTransactionsProps) => {
@@ -16,12 +18,18 @@ const RecentTransactions = ({
     accounts.find((account) => account.supabaseItemId === supabaseItemId) ||
     accounts[0];
   const activeId = activeAccount?.supabaseItemId || supabaseItemId;
-  const visibleAccounts = accounts.slice(0, VISIBLE_ACCOUNT_TABS);
-  const accountsToShow =
-    activeAccount &&
-    !visibleAccounts.some((account) => account.supabaseItemId === activeId)
-      ? [...visibleAccounts.slice(0, VISIBLE_ACCOUNT_TABS - 1), activeAccount]
-      : visibleAccounts;
+
+  const featured =
+    featuredAccounts.length > 0
+      ? featuredAccounts.slice(0, FEATURED_ACCOUNTS_COUNT)
+      : accounts.slice(0, FEATURED_ACCOUNTS_COUNT);
+
+  const featuredIds = new Set(featured.map((account) => account.supabaseItemId));
+  const moreAccounts = accounts.filter(
+    (account) => !featuredIds.has(account.supabaseItemId)
+  );
+
+  const limitedTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
 
   return (
     <section className="recent-transactions">
@@ -38,18 +46,25 @@ const RecentTransactions = ({
       {accounts.length > 0 ? (
         <div className="flex flex-col gap-4">
           <div className="recent-transactions-tablist">
-            {accountsToShow.map((account) => (
+            {featured.map((account) => (
               <BankTabItem
                 key={account.id}
                 account={account}
                 supabaseItemId={activeId}
               />
             ))}
+
+            {moreAccounts.length > 0 ? (
+              <HomeAccountMoreSelect
+                accounts={moreAccounts}
+                selectedId={activeId || ""}
+              />
+            ) : null}
           </div>
 
           {activeAccount ? <BankInfo account={activeAccount} /> : null}
 
-          <TransactionsTable transactions={transactions} />
+          <TransactionsTable transactions={limitedTransactions} />
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white px-4 py-8 text-center text-14 text-gray-600">

@@ -16,7 +16,7 @@ const Copy = ({ title }: { title: string }) => {
   return (
     <button
       onClick={copyToClipboard}
-      className="mt-2 flex items-center justify-center rounded-md p-2 transition-all hover:bg-gray-100"
+      className="flex shrink-0 items-center justify-center rounded-md p-1.5 transition-all hover:bg-gray-100"
       title="ID'yi Kopyala"
     >
       {!hasCopied ? (

@@ -1,4 +1,5 @@
 import HeaderBox from "@/components/HeaderBox";
+import TransactionAccountSelect from "@/components/TransactionAccountSelect";
 import Pagination from "@/components/Pagination";
 import TransactionsTable from "@/components/TransactionsTable";
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
@@ -48,6 +49,13 @@ const TransactionHistory = async ({ searchParams: { id, page } }: SearchParamPro
           title="Transaction History"
           subtext="See your bank details and transactions."
         />
+
+        {accountsData.length > 1 ? (
+          <TransactionAccountSelect
+            accounts={accountsData}
+            selectedId={selectedAccount?.supabaseItemId || accountsData[0].supabaseItemId}
+          />
+        ) : null}
       </div>
 
       {selectedAccount ? (

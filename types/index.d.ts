@@ -69,6 +69,7 @@ type CreditCardProps = {
   userName: string;
   showBalance?: boolean;
   gradientClass?: string;
+  variant?: "default" | "sidebar";
 };
 
 declare interface DoughnutChartProps {
@@ -77,6 +78,7 @@ declare interface DoughnutChartProps {
 
 declare type RecentTransactionsProps = {
   accounts: Account[];
+  featuredAccounts?: Account[];
   transactions?: Transaction[];
   supabaseItemId?: string;
   page?: number;
@@ -85,6 +87,7 @@ declare type RecentTransactionsProps = {
 declare type BankTabItemProps = {
   account: Account;
   supabaseItemId?: string;
+  basePath?: string;
 };
 
 declare type BankInfoProps = {

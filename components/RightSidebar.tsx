@@ -103,20 +103,22 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
           <div className="relative flex flex-1 flex-col items-center justify-center gap-5">
             <div className="relative z-10">
               <BankCard
-                key={banks[0].id} // Supabasede bankaların id'si var, o yüzden id ile key verdik
+                key={banks[0].id}
                 account={banks[0]}
                 userName={fullName}
                 showBalance={false}
+                variant="sidebar"
               />
             </div>
 
             {banks[1] && (
               <div className="absolute right-0 top-8 z-0 w-[90%]">
                 <BankCard
-                  key={banks[1].id} // Supabasede bankaların id'si var, o yüzden id ile key verdik
+                  key={banks[1].id}
                   account={banks[1]}
                   userName={fullName}
                   showBalance={false}
+                  variant="sidebar"
                 />
               </div>
             )}
