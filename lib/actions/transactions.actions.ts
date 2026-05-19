@@ -62,7 +62,7 @@ export const verifyRecipient = async (shareableId: string, email: string) => {
       return false;
     }
 
-    const emailsToTry = [...new Set([trimmedEmail, trimmedEmail.toLowerCase()])];
+    const emailsToTry = Array.from(new Set([trimmedEmail, trimmedEmail.toLowerCase()]));
 
     for (const tryEmail of emailsToTry) {
       const accounts = await getAccounts({ email: tryEmail });
