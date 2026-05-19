@@ -72,6 +72,10 @@
     @apply text-[12px] leading-[16px];
   }
 
+  .text-13 {
+    @apply text-[13px] leading-[18px];
+  }
+
   .text-14 {
     @apply text-[14px] leading-[20px];
   }

@@ -1,11 +1,18 @@
 "use client"; // Buton tıklaması (onClick) için client component olması gerekiyor
 
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { AlertTriangle, WalletCards } from 'lucide-react'
 import Category from '@/components/Category'
 import BankCard from '@/components/ui/BankCard'
-import { countTransactionCategories } from '@/lib/utilsz'
+import {
+  analyzeBudgetsFromTransactions,
+  getPlannerStateFromStorage,
+  type StoredBudget,
+} from '@/lib/budget-utils'
+import { cn, countTransactionCategories, formatAmount } from '@/lib/utilsz'
 import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/saltedge.actions' // Salt Edge oturum oluşturma fonksiyonunu import ettik
 
 
@@ -13,12 +20,22 @@ import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/salt
 const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps) => {
   const router = useRouter();
   const categories = countTransactionCategories(transactions);
+  const [budgets, setBudgets] = useState<StoredBudget[]>([]);
+  const budgetAnalyses = useMemo(
+    () => analyzeBudgetsFromTransactions(budgets, transactions),
+    [budgets, transactions]
+  );
+  const budgetRisk = budgetAnalyses.find((budget) => budget.status !== 'good') || budgetAnalyses[0];
 
   const firstInitial = (user?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || 'U').toUpperCase()
   const fullName =
     [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
     user?.email ||
     'User'
+
+  useEffect(() => {
+    setBudgets(getPlannerStateFromStorage().budgets);
+  }, []);
 
   const handleAddBank = async () => {
     try {
@@ -141,6 +158,62 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
           ) : (
             <div className="rounded-lg border border-gray-200 bg-white px-4 py-5 text-center text-14 text-gray-600">
               No spending categories yet.
+            </div>
+          )}
+        </div>
+
+        <div className="spending-categories">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="header-2">Budget Watch</h2>
+            <Link href="/budgets" className="text-13 font-semibold text-blue-600">
+              Manage
+            </Link>
+          </div>
+
+          {budgetRisk ? (
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-14 font-semibold text-gray-800">
+                    {budgetRisk.category}
+                  </p>
+                  <p className="mt-1 text-12 text-gray-600">
+                    {formatAmount(Math.max(0, budgetRisk.remaining))} left from{' '}
+                    {formatAmount(budgetRisk.monthlyLimit)}
+                  </p>
+                </div>
+                <div
+                  className={cn('flex-center size-9 rounded-full', {
+                    'bg-blue-50 text-blue-600': budgetRisk.status === 'good',
+                    'bg-amber-50 text-amber-600': budgetRisk.status === 'watch',
+                    'bg-red-50 text-red-600': budgetRisk.status === 'over',
+                  })}
+                >
+                  {budgetRisk.status === 'good' ? (
+                    <WalletCards size={17} />
+                  ) : (
+                    <AlertTriangle size={17} />
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className={cn('h-full rounded-full', {
+                    'bg-blue-600': budgetRisk.status === 'good',
+                    'bg-amber-500': budgetRisk.status === 'watch',
+                    'bg-red-500': budgetRisk.status === 'over',
+                  })}
+                  style={{ width: `${Math.min(budgetRisk.percentage, 100)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-12 font-medium text-gray-600">
+                {budgetRisk.percentage}% used this month
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-14 text-gray-600">
+              Add a category limit to track budget risk from the dashboard.
             </div>
           )}
         </div>

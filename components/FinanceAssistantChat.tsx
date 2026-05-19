@@ -2,13 +2,18 @@
 
 import {
   askFinanceAssistant,
-  type AssistantBudget,
-  type AssistantSavingsGoal,
   type FinanceAssistantOverview,
 } from "@/lib/actions/assistant.actions";
+import {
+  analyzeBudgetsFromCategorySpending,
+  createPlannerId,
+  getPlannerStateFromStorage,
+  savePlannerStateToStorage,
+  type StoredBudget,
+  type StoredSavingsGoal,
+} from "@/lib/budget-utils";
 import { formatAmount } from "@/lib/utilsz";
 import {
-  Bot,
   Loader2,
   Plus,
   RotateCcw,
@@ -29,8 +34,6 @@ type FinanceAssistantChatProps = {
   overview: FinanceAssistantOverview;
 };
 
-const PLANNER_STORAGE_KEY = "spendwise-finance-planner";
-
 const demoQuestionGroups = [
   {
     label: "Spending",
@@ -49,11 +52,6 @@ const demoQuestionGroups = [
   },
 ];
 
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : String(Date.now());
-
 const splitMessage = (content: string) =>
   content
     .split(/\n+/)
@@ -63,8 +61,8 @@ const splitMessage = (content: string) =>
 const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [budgets, setBudgets] = useState<AssistantBudget[]>([]);
-  const [savingsGoals, setSavingsGoals] = useState<AssistantSavingsGoal[]>([]);
+  const [budgets, setBudgets] = useState<StoredBudget[]>([]);
+  const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
   const [isPlannerLoaded, setIsPlannerLoaded] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState(
     overview.topCategories[0]?.name || "Food and Drink"
@@ -90,23 +88,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   );
 
   const budgetAnalyses = useMemo(
-    () =>
-      budgets.map((budget) => {
-        const spent =
-          overview.topCategories.find(
-            (category) => category.name.toLowerCase() === budget.category.toLowerCase()
-          )?.amount || 0;
-        const percentage = budget.monthlyLimit
-          ? Math.round((spent / budget.monthlyLimit) * 100)
-          : 0;
-
-        return {
-          ...budget,
-          spent,
-          remaining: budget.monthlyLimit - spent,
-          percentage,
-        };
-      }),
+    () => analyzeBudgetsFromCategorySpending(budgets, overview.topCategories),
     [budgets, overview.topCategories]
   );
 
@@ -127,27 +109,16 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   );
 
   useEffect(() => {
-    const storedPlanner = window.localStorage.getItem(PLANNER_STORAGE_KEY);
-    if (storedPlanner) {
-      try {
-        const parsed = JSON.parse(storedPlanner);
-        setBudgets(Array.isArray(parsed.budgets) ? parsed.budgets : []);
-        setSavingsGoals(Array.isArray(parsed.savingsGoals) ? parsed.savingsGoals : []);
-      } catch {
-        setBudgets([]);
-        setSavingsGoals([]);
-      }
-    }
+    const planner = getPlannerStateFromStorage();
+    setBudgets(planner.budgets);
+    setSavingsGoals(planner.savingsGoals);
     setIsPlannerLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!isPlannerLoaded) return;
 
-    window.localStorage.setItem(
-      PLANNER_STORAGE_KEY,
-      JSON.stringify({ budgets, savingsGoals })
-    );
+    savePlannerStateToStorage({ budgets, savingsGoals });
   }, [budgets, isPlannerLoaded, savingsGoals]);
 
   useEffect(() => {
@@ -168,7 +139,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
         (budget) => budget.category.toLowerCase() !== cleanCategory.toLowerCase()
       ),
       {
-        id: createId(),
+        id: createPlannerId(),
         category: cleanCategory,
         monthlyLimit,
       },
@@ -190,7 +161,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
     setSavingsGoals((current) => [
       ...current,
       {
-        id: createId(),
+        id: createPlannerId(),
         name: cleanName,
         targetAmount,
         currentAmount,
@@ -277,7 +248,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                   : "bg-gray-100 text-gray-600"
               }`}
             >
-              <Bot size={14} />
+              <Sparkles size={14} />
               {overview.answerMode === "gemini" ? "Smart answers active" : "Basic answers active"}
             </div>
             <button
