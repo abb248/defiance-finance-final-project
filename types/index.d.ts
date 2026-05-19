@@ -105,9 +105,18 @@ declare type CategoryBadgeProps = {
 declare type PaginationProps = {
   page: number;
   totalPages: number;
-  query?: {
-    id?: string;
-  };
+  query?: TransactionFilterQuery;
+};
+
+declare type TransactionFilterQuery = {
+  id?: string;
+  search?: string;
+  category?: string;
+  type?: string;
+  from?: string;
+  to?: string;
+  min?: string;
+  max?: string;
 };
 
 declare type CategoryCount = {

@@ -1,5 +1,6 @@
 import HeaderBox from "@/components/HeaderBox";
 import TransactionAccountSelect from "@/components/TransactionAccountSelect";
+import TransactionFilters from "@/components/TransactionFilters";
 import Pagination from "@/components/Pagination";
 import TransactionsTable from "@/components/TransactionsTable";
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
@@ -9,19 +10,106 @@ import { redirect } from "next/navigation";
 
 const ROWS_PER_PAGE = 10;
 
-const TransactionHistory = async ({ searchParams: { id, page } }: SearchParamProps) => {
+const getSingleParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+const getSignedAmount = (transaction: Transaction) => {
+  if (typeof transaction.signedAmount === "number") return transaction.signedAmount;
+  const amount = Math.abs(Number(transaction.amount) || 0);
+  return transaction.type === "debit" ? -amount : amount;
+};
+
+const normalizeValue = (value?: string) =>
+  (value || "").toLowerCase().replace(/_/g, " ").trim();
+
+const getTransactionDateTime = (transaction: Transaction) => {
+  const date = new Date(transaction.date || 0);
+  return Number.isNaN(date.getTime()) ? null : date.getTime();
+};
+
+const getDateBoundary = (value?: string, endOfDay = false) => {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) date.setHours(23, 59, 59, 999);
+
+  return date.getTime();
+};
+
+const filterTransactions = (
+  transactions: Transaction[],
+  query: TransactionFilterQuery
+) => {
+  const search = normalizeValue(query.search);
+  const category = normalizeValue(query.category);
+  const type = normalizeValue(query.type);
+  const from = getDateBoundary(query.from);
+  const to = getDateBoundary(query.to, true);
+  const min = query.min ? Number(query.min) : null;
+  const max = query.max ? Number(query.max) : null;
+
+  return transactions.filter((transaction) => {
+    const signedAmount = getSignedAmount(transaction);
+    const amount = Math.abs(signedAmount);
+    const transactionDate = getTransactionDateTime(transaction);
+    const transactionType = signedAmount < 0 ? "debit" : "credit";
+    const searchableText = normalizeValue(
+      [
+        transaction.name,
+        transaction.category,
+        transaction.paymentChannel,
+        transaction.status,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
+
+    if (search && !searchableText.includes(search)) return false;
+    if (category && normalizeValue(transaction.category) !== category) return false;
+    if (type && transactionType !== type) return false;
+    if (from && (!transactionDate || transactionDate < from)) return false;
+    if (to && (!transactionDate || transactionDate > to)) return false;
+    if (min !== null && !Number.isNaN(min) && amount < min) return false;
+    if (max !== null && !Number.isNaN(max) && amount > max) return false;
+
+    return true;
+  });
+};
+
+const getCategoryOptions = (transactions: Transaction[]) =>
+  Array.from(
+    new Set(
+      transactions
+        .map((transaction) => transaction.category?.replace(/_/g, " ").trim())
+        .filter(Boolean) as string[]
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
+  const { id, page, search, category, type, from, to, min, max } = searchParams;
   const loggedIn = await getLoggedInUser();
 
   if (!loggedIn) redirect("/sign-in");
 
-  const currentPage = Math.max(Number(page as string) || 1, 1);
+  const currentPage = Math.max(Number(getSingleParam(page)) || 1, 1);
+  const filterQuery: TransactionFilterQuery = {
+    id: getSingleParam(id),
+    search: getSingleParam(search),
+    category: getSingleParam(category),
+    type: getSingleParam(type),
+    from: getSingleParam(from),
+    to: getSingleParam(to),
+    min: getSingleParam(min),
+    max: getSingleParam(max),
+  };
 
   const accounts = await getAccounts({
     email: loggedIn.email,
   });
 
   const accountsData = accounts?.data || [];
-  const requestedId = typeof id === "string" ? id : undefined;
+  const requestedId = filterQuery.id;
   const selectedAccount =
     accountsData.find((account: Account) => account.supabaseItemId === requestedId) ||
     accountsData[0];
@@ -34,13 +122,19 @@ const TransactionHistory = async ({ searchParams: { id, page } }: SearchParamPro
       })
     : null;
   const transactions = account?.transactions || [];
-  const totalPages = Math.ceil(transactions.length / ROWS_PER_PAGE);
+  const filteredTransactions = filterTransactions(transactions, filterQuery);
+  const categoryOptions = getCategoryOptions(transactions);
+  const totalPages = Math.ceil(filteredTransactions.length / ROWS_PER_PAGE);
   const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
   const startIndex = (safePage - 1) * ROWS_PER_PAGE;
-  const paginatedTransactions = transactions.slice(
+  const paginatedTransactions = filteredTransactions.slice(
     startIndex,
     startIndex + ROWS_PER_PAGE
   );
+  const paginationQuery: TransactionFilterQuery = {
+    ...filterQuery,
+    id: selectedAccount?.supabaseItemId,
+  };
 
   return (
     <section className="transactions">
@@ -81,12 +175,20 @@ const TransactionHistory = async ({ searchParams: { id, page } }: SearchParamPro
             </div>
           </div>
 
+          <TransactionFilters
+            categories={categoryOptions}
+            query={filterQuery}
+            selectedAccountId={selectedAccount.supabaseItemId}
+            totalCount={transactions.length}
+            filteredCount={filteredTransactions.length}
+          />
+
           <TransactionsTable transactions={paginatedTransactions} />
 
           <Pagination
             page={safePage}
             totalPages={totalPages}
-            query={{ id: selectedAccount.supabaseItemId }}
+            query={paginationQuery}
           />
         </div>
       ) : (

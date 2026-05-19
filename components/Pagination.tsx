@@ -6,7 +6,9 @@ import { cn } from "@/lib/utilsz";
 const getPageUrl = (page: number, query?: PaginationProps["query"]) => {
   const params = new URLSearchParams();
 
-  if (query?.id) params.set("id", query.id);
+  Object.entries(query || {}).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
   params.set("page", String(page));
 
   return `/transaction-history?${params.toString()}`;
