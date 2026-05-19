@@ -32,6 +32,7 @@ type AssistantMessage = {
 
 type FinanceAssistantChatProps = {
   overview: FinanceAssistantOverview;
+  initialQuestion?: string;
 };
 
 const demoQuestionGroups = [
@@ -58,7 +59,7 @@ const splitMessage = (content: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
+const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
@@ -73,6 +74,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   const [goalCurrent, setGoalCurrent] = useState("");
   const [plannerNotice, setPlannerNotice] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const hasSubmittedInitialQuestion = useRef(false);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       role: "assistant",
@@ -202,6 +204,13 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!initialQuestion || !isPlannerLoaded || hasSubmittedInitialQuestion.current) return;
+
+    hasSubmittedInitialQuestion.current = true;
+    submitQuestion(initialQuestion);
+  }, [initialQuestion, isPlannerLoaded]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

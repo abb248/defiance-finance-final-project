@@ -3,7 +3,10 @@ import HeaderBox from "@/components/HeaderBox";
 import { getFinanceAssistantOverview } from "@/lib/actions/assistant.actions";
 import { redirect } from "next/navigation";
 
-const AssistantPage = async () => {
+const getSingleParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+const AssistantPage = async ({ searchParams }: SearchParamProps) => {
   const overview = await getFinanceAssistantOverview();
 
   if (!overview) {
@@ -17,7 +20,10 @@ const AssistantPage = async () => {
         subtext="Ask questions about your accounts, spending, and recent transactions."
       />
 
-      <FinanceAssistantChat overview={overview} />
+      <FinanceAssistantChat
+        overview={overview}
+        initialQuestion={getSingleParam(searchParams.question)}
+      />
     </section>
   );
 };

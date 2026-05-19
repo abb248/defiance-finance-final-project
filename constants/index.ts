@@ -15,6 +15,11 @@ export const sidebarLinks = [
     label: "Transaction History",
   },
   {
+    imgURL: "/icons/reports.svg",
+    route: "/reports",
+    label: "Reports",
+  },
+  {
     imgURL: "/icons/budget.svg",
     route: "/budgets",
     label: "Budgets",
