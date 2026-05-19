@@ -7,8 +7,18 @@ import {
   type FinanceAssistantOverview,
 } from "@/lib/actions/assistant.actions";
 import { formatAmount } from "@/lib/utilsz";
-import { Bot, Loader2, Plus, Send, Sparkles, Target, Trash2, WalletCards } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  Bot,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Send,
+  Sparkles,
+  Target,
+  Trash2,
+  WalletCards,
+} from "lucide-react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type AssistantMessage = {
   role: "assistant" | "user";
@@ -44,6 +54,12 @@ const createId = () =>
     ? crypto.randomUUID()
     : String(Date.now());
 
+const splitMessage = (content: string) =>
+  content
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +73,8 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
   const [goalName, setGoalName] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
   const [goalCurrent, setGoalCurrent] = useState("");
+  const [plannerNotice, setPlannerNotice] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       role: "assistant",
@@ -132,11 +150,18 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
     );
   }, [budgets, isPlannerLoaded, savingsGoals]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [isLoading, messages]);
+
   const addBudget = () => {
     const monthlyLimit = Number(budgetLimit);
     const cleanCategory = budgetCategory.trim();
 
-    if (!cleanCategory || !monthlyLimit || monthlyLimit <= 0) return;
+    if (!cleanCategory || !monthlyLimit || monthlyLimit <= 0) {
+      setPlannerNotice("Enter a category and a budget limit greater than 0.");
+      return;
+    }
 
     setBudgets((current) => [
       ...current.filter(
@@ -149,6 +174,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
       },
     ]);
     setBudgetLimit("");
+    setPlannerNotice(`${cleanCategory} budget is ready for assistant answers.`);
   };
 
   const addSavingsGoal = () => {
@@ -156,7 +182,10 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
     const currentAmount = Number(goalCurrent) || 0;
     const cleanName = goalName.trim();
 
-    if (!cleanName || !targetAmount || targetAmount <= 0) return;
+    if (!cleanName || !targetAmount || targetAmount <= 0) {
+      setPlannerNotice("Enter a goal name and a target amount greater than 0.");
+      return;
+    }
 
     setSavingsGoals((current) => [
       ...current,
@@ -170,6 +199,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
     setGoalName("");
     setGoalTarget("");
     setGoalCurrent("");
+    setPlannerNotice(`${cleanName} goal is ready for assistant answers.`);
   };
 
   const submitQuestion = async (question: string) => {
@@ -207,6 +237,25 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
     submitQuestion(input);
   };
 
+  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submitQuestion(input);
+    }
+  };
+
+  const clearChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          overview.quickInsights[0] ||
+          "I can help you understand your spending, balances, and recent transactions.",
+      },
+    ]);
+    setInput("");
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
       <section className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -220,15 +269,26 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
               <p className="text-14 text-gray-600">Personal answers from your finance data</p>
             </div>
           </div>
-          <div
-            className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-12 font-semibold ${
-              overview.answerMode === "gemini"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            <Bot size={14} />
-            {overview.answerMode === "gemini" ? "Smart answers active" : "Basic answers active"}
+          <div className="flex shrink-0 items-center gap-2">
+            <div
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-12 font-semibold ${
+                overview.answerMode === "gemini"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              <Bot size={14} />
+              {overview.answerMode === "gemini" ? "Smart answers active" : "Basic answers active"}
+            </div>
+            <button
+              type="button"
+              onClick={clearChat}
+              className="flex-center size-9 rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+              aria-label="Clear chat"
+              title="Clear chat"
+            >
+              <RotateCcw size={16} />
+            </button>
           </div>
         </div>
 
@@ -244,7 +304,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                     <button
                       key={question}
                       type="button"
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-12 font-semibold text-gray-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-12 font-semibold text-gray-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                       onClick={() => submitQuestion(question)}
                       disabled={isLoading}
                     >
@@ -260,8 +320,10 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleInputKeyDown}
               placeholder="Ask about spending, accounts, or recent transactions"
               className="input-class h-12 flex-1 px-4"
+              disabled={isLoading}
             />
             <button
               type="submit"
@@ -287,7 +349,11 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                     : "border border-gray-200 bg-gray-25 text-gray-700"
                 }`}
               >
-                {message.content}
+                {splitMessage(message.content).map((paragraph) => (
+                  <p key={paragraph} className="mb-2 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
               </div>
             </div>
           ))}
@@ -300,6 +366,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </section>
 
@@ -315,6 +382,11 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
             </span>
           </div>
           <div className="mt-3 flex flex-col gap-3">
+            {plannerNotice ? (
+              <div className="rounded-lg bg-blue-50 px-3 py-2 text-12 font-medium text-blue-700">
+                {plannerNotice}
+              </div>
+            ) : null}
             <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-2">
               <select
                 value={budgetCategory}
@@ -343,6 +415,12 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                 min="1"
                 placeholder="Limit"
                 className="input-class h-11 px-3 text-14"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addBudget();
+                  }
+                }}
               />
             </div>
             <button
@@ -433,6 +511,12 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                 min="1"
                 placeholder="Target"
                 className="input-class h-11 px-3 text-14"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addSavingsGoal();
+                  }
+                }}
               />
               <input
                 value={goalCurrent}
@@ -441,6 +525,12 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                 min="0"
                 placeholder="Saved"
                 className="input-class h-11 px-3 text-14"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addSavingsGoal();
+                  }
+                }}
               />
             </div>
             <button
