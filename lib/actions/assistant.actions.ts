@@ -74,6 +74,7 @@ export type FinanceAssistantOverview = {
   userName: string;
   accountCount: number;
   totalBalance: number;
+  answerMode: "gemini" | "basic";
   accounts: AssistantAccountSummary[];
   monthSpent: number;
   monthIncome: number;
@@ -380,6 +381,7 @@ const buildOverview = (
     userName: user.firstName || user.email,
     accountCount: accounts.length,
     totalBalance,
+    answerMode: process.env.GEMINI_API_KEY ? "gemini" : "basic",
     accounts: accounts.map((account) => ({
       id: account.supabaseItemId,
       name: account.name || "Bank account",

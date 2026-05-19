@@ -7,7 +7,7 @@ import {
   type FinanceAssistantOverview,
 } from "@/lib/actions/assistant.actions";
 import { formatAmount } from "@/lib/utilsz";
-import { Loader2, Plus, Send, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Loader2, Plus, Send, Sparkles, Target, Trash2, WalletCards } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type AssistantMessage = {
@@ -20,6 +20,24 @@ type FinanceAssistantChatProps = {
 };
 
 const PLANNER_STORAGE_KEY = "spendwise-finance-planner";
+
+const demoQuestionGroups = [
+  {
+    label: "Spending",
+    questions: [
+      "What did I spend the most on this month?",
+      "What are my recent transactions?",
+    ],
+  },
+  {
+    label: "Planning",
+    questions: ["How are my budgets doing?", "How close am I to my savings goals?"],
+  },
+  {
+    label: "Accounts",
+    questions: ["Which account has the highest balance?", "Will my spending be high this month?"],
+  },
+];
 
 const createId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -202,20 +220,39 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
               <p className="text-14 text-gray-600">Personal answers from your finance data</p>
             </div>
           </div>
+          <div
+            className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-12 font-semibold ${
+              overview.answerMode === "gemini"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            <Bot size={14} />
+            {overview.answerMode === "gemini" ? "Smart answers active" : "Basic answers active"}
+          </div>
         </div>
 
         <div className="border-b border-gray-200 p-5">
-          <div className="mb-4 flex flex-wrap gap-2">
-            {overview.suggestedQuestions.map((question) => (
-              <button
-                key={question}
-                type="button"
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-12 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-                onClick={() => submitQuestion(question)}
-                disabled={isLoading}
-              >
-                {question}
-              </button>
+          <div className="mb-4 grid gap-3 lg:grid-cols-3">
+            {demoQuestionGroups.map((group) => (
+              <div key={group.label} className="rounded-lg border border-gray-200 bg-gray-25 p-3">
+                <p className="mb-2 text-12 font-semibold uppercase text-gray-500">
+                  {group.label}
+                </p>
+                <div className="flex flex-col gap-2">
+                  {group.questions.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-12 font-semibold text-gray-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                      onClick={() => submitQuestion(question)}
+                      disabled={isLoading}
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -268,8 +305,16 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
 
       <aside className="flex flex-col gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-12 font-semibold uppercase text-gray-500">Budget Planner</p>
-          <div className="mt-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <WalletCards size={18} className="text-blue-600" />
+              <p className="text-12 font-semibold uppercase text-gray-500">Budget Planner</p>
+            </div>
+            <span className="rounded-full bg-gray-100 px-2 py-1 text-10 font-semibold text-gray-600">
+              {budgetAnalyses.length}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col gap-3">
             <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-2">
               <select
                 value={budgetCategory}
@@ -303,7 +348,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
             <button
               type="button"
               onClick={addBudget}
-              className="flex-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-14 font-semibold text-white transition-colors hover:bg-blue-700"
+              className="flex-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-12 font-semibold text-white transition-colors hover:bg-blue-700"
             >
               <Plus size={16} />
               Add budget
@@ -352,15 +397,28 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                   </div>
                 ))
               ) : (
-                <p className="text-14 text-gray-600">Add a category limit to track risk.</p>
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-25 p-3">
+                  <p className="text-13 font-semibold text-gray-700">No budget yet</p>
+                  <p className="mt-1 text-12 text-gray-600">
+                    Add one category limit to get risk alerts in the assistant.
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-12 font-semibold uppercase text-gray-500">Savings Goals</p>
-          <div className="mt-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Target size={18} className="text-emerald-600" />
+              <p className="text-12 font-semibold uppercase text-gray-500">Savings Goals</p>
+            </div>
+            <span className="rounded-full bg-gray-100 px-2 py-1 text-10 font-semibold text-gray-600">
+              {savingsGoalAnalyses.length}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col gap-3">
             <input
               value={goalName}
               onChange={(event) => setGoalName(event.target.value)}
@@ -388,7 +446,7 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
             <button
               type="button"
               onClick={addSavingsGoal}
-              className="flex-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-14 font-semibold text-white transition-colors hover:bg-blue-700"
+              className="flex-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-12 font-semibold text-white transition-colors hover:bg-blue-700"
             >
               <Plus size={16} />
               Add goal
@@ -431,7 +489,12 @@ const FinanceAssistantChat = ({ overview }: FinanceAssistantChatProps) => {
                   </div>
                 ))
               ) : (
-                <p className="text-14 text-gray-600">Add a savings target to get goal advice.</p>
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-25 p-3">
+                  <p className="text-13 font-semibold text-gray-700">No goal yet</p>
+                  <p className="mt-1 text-12 text-gray-600">
+                    Add a target amount to get progress advice during the demo.
+                  </p>
+                </div>
               )}
             </div>
           </div>
