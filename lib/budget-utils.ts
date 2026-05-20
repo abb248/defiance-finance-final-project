@@ -14,9 +14,21 @@ export type StoredSavingsGoal = {
   targetDate?: string;
 };
 
+export type StoredSubscription = {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  dueDate: string;
+  frequency: "weekly" | "monthly" | "yearly";
+  accountName?: string;
+  isPaid?: boolean;
+};
+
 export type StoredPlannerState = {
   budgets: StoredBudget[];
   savingsGoals: StoredSavingsGoal[];
+  subscriptions: StoredSubscription[];
 };
 
 export type BudgetCategorySpending = {
@@ -41,6 +53,13 @@ export type SavingsGoalAnalysis = StoredSavingsGoal & {
   monthlyNeeded: number;
   weeklyNeeded: number;
   status: "completed" | "on-track" | "behind" | "no-date";
+};
+
+export type SubscriptionAnalysis = StoredSubscription & {
+  daysUntilDue: number;
+  monthlyAmount: number;
+  yearlyAmount: number;
+  status: "paid" | "due-soon" | "overdue" | "scheduled";
 };
 
 export const createPlannerId = () =>
@@ -251,22 +270,76 @@ export const analyzeSavingsGoals = (
       return statusWeight[a.status] - statusWeight[b.status] || b.remaining - a.remaining;
     });
 
+const getDateStart = (dateValue: string) => {
+  const date = new Date(dateValue || 0);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getSubscriptionMonthlyAmount = (subscription: StoredSubscription) => {
+  const amount = Number(subscription.amount) || 0;
+
+  if (subscription.frequency === "weekly") return amount * 4.33;
+  if (subscription.frequency === "yearly") return amount / 12;
+  return amount;
+};
+
+export const analyzeSubscriptions = (
+  subscriptions: StoredSubscription[] = []
+): SubscriptionAnalysis[] => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return subscriptions
+    .filter((subscription) => subscription.name && Number(subscription.amount) > 0)
+    .map((subscription) => {
+      const dueDate = getDateStart(subscription.dueDate);
+      const daysUntilDue = dueDate
+        ? Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000)
+        : 9999;
+      const monthlyAmount = getSubscriptionMonthlyAmount(subscription);
+      const yearlyAmount = monthlyAmount * 12;
+      let status: SubscriptionAnalysis["status"] = "scheduled";
+
+      if (subscription.isPaid) {
+        status = "paid";
+      } else if (daysUntilDue < 0) {
+        status = "overdue";
+      } else if (daysUntilDue <= 7) {
+        status = "due-soon";
+      }
+
+      return {
+        ...subscription,
+        amount: Number(subscription.amount) || 0,
+        category: normalizeBudgetCategory(subscription.category),
+        daysUntilDue,
+        monthlyAmount,
+        yearlyAmount,
+        status,
+      };
+    })
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+};
+
 export const getPlannerStateFromStorage = (): StoredPlannerState => {
   if (typeof window === "undefined") {
-    return { budgets: [], savingsGoals: [] };
+    return { budgets: [], savingsGoals: [], subscriptions: [] };
   }
 
   try {
     const storedPlanner = window.localStorage.getItem(PLANNER_STORAGE_KEY);
-    if (!storedPlanner) return { budgets: [], savingsGoals: [] };
+    if (!storedPlanner) return { budgets: [], savingsGoals: [], subscriptions: [] };
 
     const parsed = JSON.parse(storedPlanner);
     return {
       budgets: Array.isArray(parsed?.budgets) ? parsed.budgets : [],
       savingsGoals: Array.isArray(parsed?.savingsGoals) ? parsed.savingsGoals : [],
+      subscriptions: Array.isArray(parsed?.subscriptions) ? parsed.subscriptions : [],
     };
   } catch {
-    return { budgets: [], savingsGoals: [] };
+    return { budgets: [], savingsGoals: [], subscriptions: [] };
   }
 };
 

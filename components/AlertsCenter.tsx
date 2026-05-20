@@ -14,9 +14,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   analyzeBudgetsFromCategorySpending,
   analyzeSavingsGoals,
+  analyzeSubscriptions,
   getPlannerStateFromStorage,
   type StoredBudget,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from "@/lib/budget-utils";
 import { buildFinancialAlerts, type FinancialAlert } from "@/lib/alert-utils";
 import type { FinancialReport } from "@/lib/report-utils";
@@ -40,6 +42,7 @@ const categoryLabels: Record<FinancialAlert["category"], string> = {
   goal: "Goal",
   report: "Report",
   spending: "Spending",
+  subscription: "Subscription",
 };
 
 const getResolvedAlerts = () => {
@@ -56,6 +59,7 @@ const getResolvedAlerts = () => {
 const AlertsCenter = ({ report }: AlertsCenterProps) => {
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [goals, setGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const [resolvedAlerts, setResolvedAlerts] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<"open" | "resolved" | "all">("open");
 
@@ -63,6 +67,7 @@ const AlertsCenter = ({ report }: AlertsCenterProps) => {
     const planner = getPlannerStateFromStorage();
     setBudgets(planner.budgets);
     setGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
     setResolvedAlerts(getResolvedAlerts());
   }, []);
 
@@ -75,14 +80,19 @@ const AlertsCenter = ({ report }: AlertsCenterProps) => {
     [budgets, report.categoryBreakdown]
   );
   const goalAnalyses = useMemo(() => analyzeSavingsGoals(goals), [goals]);
+  const subscriptionAnalyses = useMemo(
+    () => analyzeSubscriptions(subscriptions),
+    [subscriptions]
+  );
   const alerts = useMemo(
     () =>
       buildFinancialAlerts({
         report,
         budgets: budgetAnalyses,
         goals: goalAnalyses,
+        subscriptions: subscriptionAnalyses,
       }),
-    [budgetAnalyses, goalAnalyses, report]
+    [budgetAnalyses, goalAnalyses, report, subscriptionAnalyses]
   );
   const openAlerts = alerts.filter((alert) => !resolvedAlerts.includes(alert.id));
   const resolvedAlertItems = alerts.filter((alert) => resolvedAlerts.includes(alert.id));

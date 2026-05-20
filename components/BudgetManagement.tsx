@@ -23,6 +23,7 @@ import {
   type BudgetAnalysis,
   type StoredBudget,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from "@/lib/budget-utils";
 import { cn, formatAmount } from "@/lib/utilsz";
 
@@ -54,6 +55,7 @@ const BudgetManagement = ({
 }: BudgetManagementProps) => {
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [categoryChoice, setCategoryChoice] = useState("");
   const [customCategory, setCustomCategory] = useState("");
@@ -107,14 +109,15 @@ const BudgetManagement = ({
     const planner = getPlannerStateFromStorage();
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
     setIsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals });
-  }, [budgets, isLoaded, savingsGoals]);
+    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions });
+  }, [budgets, isLoaded, savingsGoals, subscriptions]);
 
   useEffect(() => {
     if (!categoryChoice && categoryOptions[0]) {

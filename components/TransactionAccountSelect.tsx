@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn, formatAmount } from "@/lib/utilsz";
@@ -9,22 +9,34 @@ import { cn, formatAmount } from "@/lib/utilsz";
 type TransactionAccountSelectProps = {
   accounts: Account[];
   selectedId: string;
+  allowAllAccounts?: boolean;
+  totalCurrentBalance?: number;
 };
 
 const TransactionAccountSelect = ({
   accounts,
   selectedId,
+  allowAllAccounts = false,
+  totalCurrentBalance = 0,
 }: TransactionAccountSelectProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selected =
-    accounts.find((account) => account.supabaseItemId === selectedId) ||
-    accounts[0];
+  const isAllSelected = allowAllAccounts && selectedId === "all";
+  const selected = isAllSelected
+    ? null
+    : accounts.find((account) => account.supabaseItemId === selectedId) ||
+      accounts[0];
 
-  const title = selected?.name || selected?.bankName || "Bank account";
+  const title = isAllSelected
+    ? "All accounts"
+    : selected?.name || selected?.bankName || "Bank account";
   const shortName = title.slice(0, 2).toUpperCase();
+  const balanceText = isAllSelected
+    ? `${accounts.length} accounts - ${formatAmount(totalCurrentBalance)}`
+    : formatAmount(selected?.currentBalance || 0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,9 +52,16 @@ const TransactionAccountSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (account: Account) => {
+  const getNextUrl = (nextId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("id", nextId);
+    params.delete("page");
+    return `/transaction-history?${params.toString()}`;
+  };
+
+  const handleSelect = (nextId: string) => {
     setIsOpen(false);
-    router.push(`/transaction-history?id=${account.supabaseItemId}`);
+    router.push(getNextUrl(nextId));
   };
 
   return (
@@ -62,9 +81,7 @@ const TransactionAccountSelect = ({
           </div>
           <div className="min-w-0 text-left">
             <p className="truncate text-14 font-semibold text-gray-900">{title}</p>
-            <p className="text-12 text-gray-600">
-              {formatAmount(selected?.currentBalance || 0)}
-            </p>
+            <p className="text-12 text-gray-600">{balanceText}</p>
           </div>
         </div>
         <ChevronDown
@@ -79,6 +96,44 @@ const TransactionAccountSelect = ({
           role="listbox"
           className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
         >
+          {allowAllAccounts ? (
+            <li role="option" aria-selected={isAllSelected}>
+              <button
+                type="button"
+                onClick={() => handleSelect("all")}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50",
+                  { "bg-blue-25": isAllSelected }
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-full text-12 font-bold",
+                    {
+                      "bg-blue-600 text-white": isAllSelected,
+                      "bg-gray-200 text-gray-700": !isAllSelected,
+                    }
+                  )}
+                >
+                  AL
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-14 font-medium text-gray-900">
+                    All accounts
+                  </p>
+                  <p className="text-12 text-gray-600">
+                    {accounts.length} accounts - {formatAmount(totalCurrentBalance)}
+                  </p>
+                </div>
+
+                {isAllSelected ? (
+                  <Check className="size-5 shrink-0 text-blue-600" />
+                ) : null}
+              </button>
+            </li>
+          ) : null}
+
           {accounts.map((account) => {
             const isActive = account.supabaseItemId === selectedId;
             const accountTitle =
@@ -88,7 +143,7 @@ const TransactionAccountSelect = ({
               <li key={account.id} role="option" aria-selected={isActive}>
                 <button
                   type="button"
-                  onClick={() => handleSelect(account)}
+                  onClick={() => handleSelect(account.supabaseItemId)}
                   className={cn(
                     "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50",
                     { "bg-blue-25": isActive }
@@ -111,7 +166,7 @@ const TransactionAccountSelect = ({
                       {accountTitle}
                     </p>
                     <p className="text-12 text-gray-600">
-                      {account.bankName || account.subtype || "Account"} ·{" "}
+                      {account.bankName || account.subtype || "Account"} -{" "}
                       {formatAmount(account.currentBalance || 0)}
                     </p>
                   </div>

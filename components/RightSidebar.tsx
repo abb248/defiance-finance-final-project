@@ -10,10 +10,12 @@ import BankCard from '@/components/ui/BankCard'
 import {
   analyzeBudgetsFromTransactions,
   analyzeSavingsGoals,
+  analyzeSubscriptions,
   getCurrentMonthCategorySpending,
   getPlannerStateFromStorage,
   type StoredBudget,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from '@/lib/budget-utils'
 import { buildFinancialAlerts } from '@/lib/alert-utils'
 import { buildFinancialHealthInsight } from '@/lib/insight-utils'
@@ -27,6 +29,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
   const categories = countTransactionCategories(transactions);
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const budgetAnalyses = useMemo(
     () => analyzeBudgetsFromTransactions(budgets, transactions),
     [budgets, transactions]
@@ -34,6 +37,10 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
   const savingsGoalAnalyses = useMemo(
     () => analyzeSavingsGoals(savingsGoals),
     [savingsGoals]
+  );
+  const subscriptionAnalyses = useMemo(
+    () => analyzeSubscriptions(subscriptions),
+    [subscriptions]
   );
   const budgetRisk = budgetAnalyses.find((budget) => budget.status !== 'good') || budgetAnalyses[0];
   const goalFocus =
@@ -89,10 +96,14 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
         report: sidebarReport,
       budgets: budgetAnalyses,
       goals: savingsGoalAnalyses,
+      subscriptions: subscriptionAnalyses,
       }),
-    [budgetAnalyses, savingsGoalAnalyses, sidebarReport]
+    [budgetAnalyses, savingsGoalAnalyses, sidebarReport, subscriptionAnalyses]
   );
   const topAlert = alertPreview[0];
+  const upcomingSubscription =
+    subscriptionAnalyses.find((subscription) => subscription.status !== 'paid') ||
+    subscriptionAnalyses[0];
 
   const firstInitial = (user?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || 'U').toUpperCase()
   const fullName =
@@ -104,6 +115,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
     const planner = getPlannerStateFromStorage();
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
   }, []);
 
   const handleAddBank = async () => {
@@ -299,6 +311,47 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
           ) : (
             <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-14 text-gray-600">
               No alerts right now.
+            </div>
+          )}
+        </div>
+
+        <div className="spending-categories">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="header-2">Upcoming Bills</h2>
+            <Link href="/subscriptions" className="text-13 font-semibold text-blue-600">
+              Manage
+            </Link>
+          </div>
+
+          {upcomingSubscription ? (
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-14 font-semibold text-gray-800">
+                    {upcomingSubscription.name}
+                  </p>
+                  <p className="mt-1 text-12 text-gray-600">
+                    {formatAmount(upcomingSubscription.amount)} •{' '}
+                    {upcomingSubscription.daysUntilDue < 0
+                      ? `${Math.abs(upcomingSubscription.daysUntilDue)} days late`
+                      : `${upcomingSubscription.daysUntilDue} days left`}
+                  </p>
+                </div>
+                <div
+                  className={cn('flex-center size-9 rounded-full', {
+                    'bg-red-50 text-red-600': upcomingSubscription.status === 'overdue',
+                    'bg-amber-50 text-amber-600': upcomingSubscription.status === 'due-soon',
+                    'bg-success-50 text-success-700': upcomingSubscription.status === 'paid',
+                    'bg-blue-50 text-blue-600': upcomingSubscription.status === 'scheduled',
+                  })}
+                >
+                  <WalletCards size={17} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-14 text-gray-600">
+              Add bills to see upcoming payment reminders.
             </div>
           )}
         </div>

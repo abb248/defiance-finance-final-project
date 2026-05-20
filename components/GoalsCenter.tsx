@@ -21,6 +21,7 @@ import {
   type SavingsGoalAnalysis,
   type StoredBudget,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from "@/lib/budget-utils";
 import { cn, formatAmount } from "@/lib/utilsz";
 
@@ -51,6 +52,7 @@ const statusContent: Record<SavingsGoalAnalysis["status"], { label: string; tone
 const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [goals, setGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [goalName, setGoalName] = useState("");
@@ -76,14 +78,15 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
     const planner = getPlannerStateFromStorage();
     setBudgets(planner.budgets);
     setGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
     setIsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals: goals });
-  }, [budgets, goals, isLoaded]);
+    savePlannerStateToStorage({ budgets, savingsGoals: goals, subscriptions });
+  }, [budgets, goals, isLoaded, subscriptions]);
 
   const resetForm = () => {
     setEditingGoalId(null);

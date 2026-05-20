@@ -1,4 +1,8 @@
-import type { BudgetAnalysis, SavingsGoalAnalysis } from "@/lib/budget-utils";
+import type {
+  BudgetAnalysis,
+  SavingsGoalAnalysis,
+  SubscriptionAnalysis,
+} from "@/lib/budget-utils";
 import type { FinancialReport } from "@/lib/report-utils";
 
 export type FinancialAlert = {
@@ -6,7 +10,7 @@ export type FinancialAlert = {
   title: string;
   detail: string;
   severity: "high" | "medium" | "low";
-  category: "budget" | "goal" | "spending" | "account" | "report";
+  category: "budget" | "goal" | "subscription" | "spending" | "account" | "report";
   href: string;
 };
 
@@ -21,10 +25,12 @@ export const buildFinancialAlerts = ({
   report,
   budgets,
   goals,
+  subscriptions = [],
 }: {
   report: FinancialReport;
   budgets: BudgetAnalysis[];
   goals: SavingsGoalAnalysis[];
+  subscriptions?: SubscriptionAnalysis[];
 }): FinancialAlert[] => {
   const alerts: FinancialAlert[] = [];
 
@@ -72,6 +78,30 @@ export const buildFinancialAlerts = ({
         severity: "low",
         category: "goal",
         href: "/goals",
+      });
+    }
+  });
+
+  subscriptions.forEach((subscription) => {
+    if (subscription.status === "overdue") {
+      alerts.push({
+        id: `subscription-overdue-${subscription.id}`,
+        title: `${subscription.name} is overdue`,
+        detail: `${formatAlertAmount(subscription.amount)} was due ${Math.abs(
+          subscription.daysUntilDue
+        )} days ago.`,
+        severity: "high",
+        category: "subscription",
+        href: "/subscriptions",
+      });
+    } else if (subscription.status === "due-soon") {
+      alerts.push({
+        id: `subscription-due-${subscription.id}`,
+        title: `${subscription.name} is due soon`,
+        detail: `${formatAlertAmount(subscription.amount)} is due in ${subscription.daysUntilDue} days.`,
+        severity: "medium",
+        category: "subscription",
+        href: "/subscriptions",
       });
     }
   });

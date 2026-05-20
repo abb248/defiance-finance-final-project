@@ -19,8 +19,10 @@ import type { ReactNode } from "react";
 import ReportsCharts from "@/components/ReportsCharts";
 import {
   analyzeSavingsGoals,
+  analyzeSubscriptions,
   getPlannerStateFromStorage,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from "@/lib/budget-utils";
 import type { FinancialReport } from "@/lib/report-utils";
 import { cn, formatAmount } from "@/lib/utilsz";
@@ -66,6 +68,7 @@ const MetricCard = ({
 const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
   const [copyStatus, setCopyStatus] = useState("Copy report");
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const spendingChangeIsUp = report.spendingChangePercent > 0;
   const savingsGoalAnalyses = useMemo(
     () => analyzeSavingsGoals(savingsGoals),
@@ -74,12 +77,25 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
   const topGoal =
     savingsGoalAnalyses.find((goal) => goal.status === "behind") ||
     savingsGoalAnalyses[0];
+  const subscriptionAnalyses = useMemo(
+    () => analyzeSubscriptions(subscriptions),
+    [subscriptions]
+  );
+  const recurringMonthlyTotal = subscriptionAnalyses.reduce(
+    (sum, subscription) => sum + subscription.monthlyAmount,
+    0
+  );
+  const upcomingSubscription =
+    subscriptionAnalyses.find((subscription) => subscription.status !== "paid") ||
+    subscriptionAnalyses[0];
   const assistantHref = `/assistant?question=${encodeURIComponent(
     report.assistantQuestion
   )}`;
 
   useEffect(() => {
-    setSavingsGoals(getPlannerStateFromStorage().savingsGoals);
+    const planner = getPlannerStateFromStorage();
+    setSavingsGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
   }, []);
 
   const copyReport = async () => {
@@ -164,7 +180,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
             <div className="rounded-lg bg-blue-50 p-4">
               <p className="text-12 font-semibold uppercase text-blue-700">
                 Top category
@@ -216,6 +232,19 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
                 {topGoal
                   ? `${topGoal.percentage}% complete, ${formatAmount(topGoal.remaining)} left`
                   : "Add one from Goals"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-gray-25 p-4">
+              <p className="text-12 font-semibold uppercase text-gray-500">
+                Fixed costs
+              </p>
+              <p className="mt-2 truncate text-18 font-bold text-gray-900">
+                {formatAmount(recurringMonthlyTotal)}
+              </p>
+              <p className="mt-1 text-13 text-gray-600">
+                {upcomingSubscription
+                  ? `${upcomingSubscription.name} is next`
+                  : "No subscriptions yet"}
               </p>
             </div>
           </div>
