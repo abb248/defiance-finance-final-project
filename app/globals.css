@@ -108,6 +108,10 @@
     @apply text-[36px] leading-[44px];
   }
 
+  .text-48 {
+    @apply text-[48px] leading-[56px];
+  }
+
   /* Home */
   .home {
     @apply no-scrollbar flex w-full flex-row max-xl:max-h-screen max-xl:overflow-y-scroll;

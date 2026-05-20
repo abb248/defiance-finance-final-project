@@ -9,13 +9,19 @@ import {
   Landmark,
   ReceiptText,
   Sparkles,
+  Target,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import ReportsCharts from "@/components/ReportsCharts";
+import {
+  analyzeSavingsGoals,
+  getPlannerStateFromStorage,
+  type StoredSavingsGoal,
+} from "@/lib/budget-utils";
 import type { FinancialReport } from "@/lib/report-utils";
 import { cn, formatAmount } from "@/lib/utilsz";
 
@@ -59,10 +65,22 @@ const MetricCard = ({
 
 const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
   const [copyStatus, setCopyStatus] = useState("Copy report");
+  const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
   const spendingChangeIsUp = report.spendingChangePercent > 0;
+  const savingsGoalAnalyses = useMemo(
+    () => analyzeSavingsGoals(savingsGoals),
+    [savingsGoals]
+  );
+  const topGoal =
+    savingsGoalAnalyses.find((goal) => goal.status === "behind") ||
+    savingsGoalAnalyses[0];
   const assistantHref = `/assistant?question=${encodeURIComponent(
     report.assistantQuestion
   )}`;
+
+  useEffect(() => {
+    setSavingsGoals(getPlannerStateFromStorage().savingsGoals);
+  }, []);
 
   const copyReport = async () => {
     const text = [
@@ -146,7 +164,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
             <div className="rounded-lg bg-blue-50 p-4">
               <p className="text-12 font-semibold uppercase text-blue-700">
                 Top category
@@ -184,6 +202,20 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
                 {report.mostActiveAccount
                   ? `${report.mostActiveAccount.transactionCount} transactions`
                   : "No activity this month"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-gray-25 p-4">
+              <div className="flex items-center gap-2 text-gray-500">
+                <Target size={15} />
+                <p className="text-12 font-semibold uppercase">Savings goal</p>
+              </div>
+              <p className="mt-2 truncate text-18 font-bold text-gray-900">
+                {topGoal?.name || "No goal yet"}
+              </p>
+              <p className="mt-1 text-13 text-gray-600">
+                {topGoal
+                  ? `${topGoal.percentage}% complete, ${formatAmount(topGoal.remaining)} left`
+                  : "Add one from Goals"}
               </p>
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   type FinanceAssistantOverview,
 } from "@/lib/actions/assistant.actions";
 import {
+  analyzeSavingsGoals,
   analyzeBudgetsFromCategorySpending,
   createPlannerId,
   getPlannerStateFromStorage,
@@ -12,7 +13,7 @@ import {
   type StoredBudget,
   type StoredSavingsGoal,
 } from "@/lib/budget-utils";
-import { formatAmount } from "@/lib/utilsz";
+import { cn, formatAmount } from "@/lib/utilsz";
 import {
   Loader2,
   Plus,
@@ -72,6 +73,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   const [goalName, setGoalName] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
   const [goalCurrent, setGoalCurrent] = useState("");
+  const [goalTargetDate, setGoalTargetDate] = useState("");
   const [plannerNotice, setPlannerNotice] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasSubmittedInitialQuestion = useRef(false);
@@ -95,18 +97,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   );
 
   const savingsGoalAnalyses = useMemo(
-    () =>
-      savingsGoals.map((goal) => {
-        const percentage = goal.targetAmount
-          ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
-          : 0;
-
-        return {
-          ...goal,
-          remaining: Math.max(0, goal.targetAmount - goal.currentAmount),
-          percentage,
-        };
-      }),
+    () => analyzeSavingsGoals(savingsGoals),
     [savingsGoals]
   );
 
@@ -167,11 +158,13 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
         name: cleanName,
         targetAmount,
         currentAmount,
+        targetDate: goalTargetDate || undefined,
       },
     ]);
     setGoalName("");
     setGoalTarget("");
     setGoalCurrent("");
+    setGoalTargetDate("");
     setPlannerNotice(`${cleanName} goal is ready for assistant answers.`);
   };
 
@@ -513,6 +506,12 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                 }}
               />
             </div>
+            <input
+              value={goalTargetDate}
+              onChange={(event) => setGoalTargetDate(event.target.value)}
+              type="date"
+              className="input-class h-11 px-3 text-14"
+            />
             <button
               type="button"
               onClick={addSavingsGoal}
@@ -551,11 +550,21 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                       <div
-                        className="h-full rounded-full bg-emerald-500"
+                        className={cn("h-full rounded-full", {
+                          "bg-emerald-500": goal.status === "completed",
+                          "bg-blue-600": goal.status === "on-track",
+                          "bg-red-500": goal.status === "behind",
+                          "bg-gray-500": goal.status === "no-date",
+                        })}
                         style={{ width: `${goal.percentage}%` }}
                       />
                     </div>
-                    <p className="mt-1 text-12 text-gray-600">{goal.percentage}% complete</p>
+                    <p className="mt-1 text-12 text-gray-600">
+                      {goal.percentage}% complete
+                      {goal.daysLeft !== null
+                        ? `, ${Math.max(0, goal.daysLeft)} days left`
+                        : ""}
+                    </p>
                   </div>
                 ))
               ) : (

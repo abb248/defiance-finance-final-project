@@ -34,6 +34,15 @@ export type BudgetAnalysis = StoredBudget & {
   suggestedLimit: number;
 };
 
+export type SavingsGoalAnalysis = StoredSavingsGoal & {
+  remaining: number;
+  percentage: number;
+  daysLeft: number | null;
+  monthlyNeeded: number;
+  weeklyNeeded: number;
+  status: "completed" | "on-track" | "behind" | "no-date";
+};
+
 export const createPlannerId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -163,6 +172,84 @@ export const analyzeBudgetsFromTransactions = (
   budgets: StoredBudget[] = [],
   transactions: Transaction[] = []
 ) => analyzeBudgetsFromCategorySpending(budgets, getCurrentMonthCategorySpending(transactions));
+
+const getDaysLeft = (targetDate?: string) => {
+  if (!targetDate) return null;
+
+  const target = new Date(targetDate);
+  if (Number.isNaN(target.getTime())) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+
+  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
+};
+
+export const analyzeSavingsGoals = (
+  goals: StoredSavingsGoal[] = []
+): SavingsGoalAnalysis[] =>
+  goals
+    .filter((goal) => goal.name && Number(goal.targetAmount) > 0)
+    .map((goal) => {
+      const targetAmount = Number(goal.targetAmount) || 0;
+      const currentAmount = Math.max(0, Number(goal.currentAmount) || 0);
+      const remaining = Math.max(0, targetAmount - currentAmount);
+      const percentage = targetAmount
+        ? Math.min(100, Math.round((currentAmount / targetAmount) * 100))
+        : 0;
+      const daysLeft = getDaysLeft(goal.targetDate);
+      const weeksLeft = daysLeft !== null ? Math.max(daysLeft / 7, 1) : 0;
+      const monthsLeft = daysLeft !== null ? Math.max(daysLeft / 30.44, 1) : 0;
+      const weeklyNeeded = daysLeft !== null && remaining > 0 ? remaining / weeksLeft : 0;
+      const monthlyNeeded = daysLeft !== null && remaining > 0 ? remaining / monthsLeft : 0;
+      const expectedProgress =
+        daysLeft !== null && goal.targetDate
+          ? (() => {
+              const createdAt = new Date(Number(goal.id) || Date.now());
+              const target = new Date(goal.targetDate);
+              if (
+                Number.isNaN(createdAt.getTime()) ||
+                Number.isNaN(target.getTime()) ||
+                target.getTime() <= createdAt.getTime()
+              ) {
+                return null;
+              }
+
+              const elapsed = Date.now() - createdAt.getTime();
+              const total = target.getTime() - createdAt.getTime();
+              return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+            })()
+          : null;
+
+      let status: SavingsGoalAnalysis["status"] = "no-date";
+      if (percentage >= 100) {
+        status = "completed";
+      } else if (daysLeft !== null && daysLeft < 0) {
+        status = "behind";
+      } else if (expectedProgress !== null) {
+        status = percentage + 5 >= expectedProgress ? "on-track" : "behind";
+      } else if (daysLeft !== null) {
+        status = "on-track";
+      }
+
+      return {
+        ...goal,
+        name: goal.name.trim(),
+        targetAmount,
+        currentAmount,
+        remaining,
+        percentage,
+        daysLeft,
+        monthlyNeeded,
+        weeklyNeeded,
+        status,
+      };
+    })
+    .sort((a, b) => {
+      const statusWeight = { behind: 0, "on-track": 1, "no-date": 2, completed: 3 };
+      return statusWeight[a.status] - statusWeight[b.status] || b.remaining - a.remaining;
+    });
 
 export const getPlannerStateFromStorage = (): StoredPlannerState => {
   if (typeof window === "undefined") {

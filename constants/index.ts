@@ -20,9 +20,24 @@ export const sidebarLinks = [
     label: "Reports",
   },
   {
+    imgURL: "/icons/insights.svg",
+    route: "/insights",
+    label: "Insights",
+  },
+  {
+    imgURL: "/icons/alerts.svg",
+    route: "/alerts",
+    label: "Alerts",
+  },
+  {
     imgURL: "/icons/budget.svg",
     route: "/budgets",
     label: "Budgets",
+  },
+  {
+    imgURL: "/icons/goal.svg",
+    route: "/goals",
+    label: "Goals",
   },
   {
     imgURL: "/icons/money-send.svg",
