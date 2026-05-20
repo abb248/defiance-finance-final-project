@@ -92,6 +92,21 @@ export type AssistantSubscriptionAnalysis = AssistantSubscription & {
   status: "paid" | "due-soon" | "overdue" | "scheduled";
 };
 
+export type AssistantHealthFactor = {
+  label: string;
+  score: number;
+  detail: string;
+  status: "good" | "watch" | "risk";
+};
+
+export type AssistantHealthInsight = {
+  score: number;
+  statusLabel: string;
+  summary: string;
+  factors: AssistantHealthFactor[];
+  actionItems: string[];
+};
+
 export type FinanceAssistantOverview = {
   userName: string;
   accountCount: number;
@@ -109,6 +124,7 @@ export type FinanceAssistantOverview = {
   budgetAnalyses: AssistantBudgetAnalysis[];
   savingsGoalAnalyses: AssistantSavingsGoalAnalysis[];
   subscriptionAnalyses: AssistantSubscriptionAnalysis[];
+  financialHealth: AssistantHealthInsight;
   quickInsights: string[];
   suggestedQuestions: string[];
 };
@@ -129,6 +145,15 @@ const isCurrentMonth = (date: Date, now = new Date()) =>
 
 const normalizeCategory = (category?: string) =>
   (category || "Uncategorized").replace(/_/g, " ").trim() || "Uncategorized";
+
+const clampScore = (value: number, min = 0, max = 100) =>
+  Math.min(max, Math.max(min, Math.round(value)));
+
+const getHealthFactorStatus = (score: number): AssistantHealthFactor["status"] => {
+  if (score >= 75) return "good";
+  if (score >= 50) return "watch";
+  return "risk";
+};
 
 const includesAny = (value: string, terms: string[]) =>
   terms.some((term) => value.includes(term));
@@ -174,6 +199,7 @@ const buildAssistantContext = (overview: FinanceAssistantOverview) => ({
   budgets: overview.budgetAnalyses,
   savingsGoals: overview.savingsGoalAnalyses,
   subscriptions: overview.subscriptionAnalyses,
+  financialHealth: overview.financialHealth,
   recentTransactions: overview.recentTransactions.map((transaction) => ({
     name: transaction.name,
     accountName: transaction.accountName,
@@ -445,6 +471,101 @@ const buildOverview = (
     })
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 
+  const cashFlowScore = monthIncome
+    ? clampScore(((monthIncome - monthSpent) / Math.max(monthIncome, 1)) * 100 + 55)
+    : monthSpent
+    ? 35
+    : 60;
+  const budgetScore = budgetAnalyses.length
+    ? budgetAnalyses.reduce((sum, budget) => {
+        if (budget.status === "over") return sum + 30;
+        if (budget.status === "watch") return sum + 60;
+        return sum + 90;
+      }, 0) / budgetAnalyses.length
+    : 65;
+  const goalScore = savingsGoalAnalyses.length
+    ? savingsGoalAnalyses.reduce((sum, goal) => {
+        if (goal.percentage >= 100) return sum + 100;
+        if (goal.percentage >= 50) return sum + 80;
+        if (goal.percentage > 0) return sum + 60;
+        return sum + 45;
+      }, 0) / savingsGoalAnalyses.length
+    : 60;
+  const balanceScore = totalBalance > 0 ? 80 : 45;
+  const activityScore =
+    monthTransactions.length >= 10 ? 85 : monthTransactions.length >= 4 ? 70 : 55;
+  const healthFactors: AssistantHealthFactor[] = [
+    {
+      label: "Cash flow",
+      score: clampScore(cashFlowScore),
+      detail:
+        monthIncome - monthSpent >= 0
+          ? "Income is covering this month's spending."
+          : "Spending is higher than income this month.",
+      status: getHealthFactorStatus(cashFlowScore),
+    },
+    {
+      label: "Budget control",
+      score: clampScore(budgetScore),
+      detail: budgetAnalyses.length
+        ? `${budgetAnalyses.filter((budget) => budget.status !== "good").length} budget categories need attention.`
+        : "No category budget has been added yet.",
+      status: getHealthFactorStatus(budgetScore),
+    },
+    {
+      label: "Savings goals",
+      score: clampScore(goalScore),
+      detail: savingsGoalAnalyses.length
+        ? `${savingsGoalAnalyses.filter((goal) => goal.percentage < 50).length} goals need more progress.`
+        : "No savings goal has been added yet.",
+      status: getHealthFactorStatus(goalScore),
+    },
+    {
+      label: "Account balance",
+      score: clampScore(balanceScore),
+      detail:
+        totalBalance > 0
+          ? "Total account balance is positive."
+          : "Total account balance needs attention.",
+      status: getHealthFactorStatus(balanceScore),
+    },
+    {
+      label: "Activity",
+      score: clampScore(activityScore),
+      detail: `${monthTransactions.length} transactions are tracked this month.`,
+      status: getHealthFactorStatus(activityScore),
+    },
+  ];
+  const healthScore = clampScore(
+    healthFactors.reduce((sum, factor) => sum + factor.score, 0) / healthFactors.length
+  );
+  const financialHealth: AssistantHealthInsight = {
+    score: healthScore,
+    statusLabel:
+      healthScore >= 78 ? "Strong" : healthScore >= 58 ? "Steady" : "Needs attention",
+    summary:
+      healthScore >= 78
+        ? "Your financial health looks strong this month."
+        : healthScore >= 58
+        ? "Your financial health is steady, with a few areas to watch."
+        : "Your financial health needs attention in a few places.",
+    factors: healthFactors,
+    actionItems: [
+      monthIncome - monthSpent < 0
+        ? "Reduce spending or increase income to bring cash flow above zero."
+        : "Keep cash flow positive.",
+      budgetAnalyses.some((budget) => budget.status !== "good")
+        ? "Review the budget categories that are close to or over the limit."
+        : "Keep category budgets updated.",
+      savingsGoalAnalyses.length
+        ? "Keep adding to savings goals each week."
+        : "Add a savings goal to make the score more useful.",
+      totalBalance > 0
+        ? "Protect the positive account balance."
+        : "Focus on improving account balance first.",
+    ],
+  };
+
   const topBudgetRisk = budgetAnalyses[0] || null;
   const topSavingsGoal = savingsGoalAnalyses[0] || null;
   const upcomingSubscription =
@@ -499,8 +620,10 @@ const buildOverview = (
     budgetAnalyses,
     savingsGoalAnalyses,
     subscriptionAnalyses,
+    financialHealth,
     quickInsights,
     suggestedQuestions: [
+      "Can you explain my financial health score?",
       "What did I spend the most on this month?",
       "What are my recent transactions?",
       "Which account has the highest balance?",
@@ -618,6 +741,28 @@ export const askFinanceAssistant = async (
       : isTurkish
       ? "Varsayilan alici hesap secilmemis."
       : "No default receiving account is selected yet.";
+  } else if (
+    includesAny(normalizedQuestion, [
+      "financial health",
+      "health score",
+      "explain score",
+      "score",
+      "improve first",
+      "insight",
+      "skor",
+      "finansal saglik",
+      "iyilestir",
+    ])
+  ) {
+    const health = overview.financialHealth;
+    const factorText = health.factors
+      .map((factor) => `${factor.label}: ${factor.score}/100 - ${factor.detail}`)
+      .join("; ");
+    const weakestFactor = [...health.factors].sort((a, b) => a.score - b.score)[0];
+
+    answer = isTurkish
+      ? `Finansal saglik skorun ${health.score}/100 ve durumun ${health.statusLabel}. ${health.summary} En zayif alan ${weakestFactor.label}: ${weakestFactor.detail} Ilk adim: ${health.actionItems[0]}`
+      : `Your financial health score is ${health.score}/100, which is ${health.statusLabel}. ${health.summary} Score details: ${factorText}. First improvement: ${health.actionItems[0]}`;
   } else if (
     includesAny(normalizedQuestion, [
       "account",

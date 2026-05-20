@@ -25,7 +25,8 @@ import {
   type StoredSubscription,
   type SubscriptionAnalysis,
 } from "@/lib/budget-utils";
-import { cn } from "@/lib/utilsz";
+import { useCurrency } from "@/hooks/useCurrency";
+import { cn, convertAmount } from "@/lib/utilsz";
 
 type SubscriptionsCenterProps = {
   accounts: Account[];
@@ -39,7 +40,28 @@ const statusTone: Record<SubscriptionAnalysis["status"], string> = {
   scheduled: "bg-blue-50 text-blue-700",
 };
 
+const MAX_SUBSCRIPTION_AMOUNT = 1_000_000;
+
+const parseMoneyInput = (value: string) => {
+  const trimmed = value.trim().replace(/\s/g, "");
+  if (!/^\d+([,.]\d{1,2})?$/.test(trimmed)) return null;
+
+  const parsed = Number(trimmed.replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > MAX_SUBSCRIPTION_AMOUNT) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const formatEditableMoney = (amount: number) => {
+  if (!Number.isFinite(amount)) return "";
+
+  return Number(amount.toFixed(2)).toString();
+};
+
 const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProps) => {
+  const currency = useCurrency();
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
   const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
@@ -114,12 +136,16 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
     event.preventDefault();
 
     const cleanName = name.trim();
-    const cleanAmount = Number(amount);
+    const cleanAmount = parseMoneyInput(amount);
 
     if (!cleanName || !cleanAmount || cleanAmount <= 0 || !dueDate) {
-      setNotice("Enter a bill name, amount, and due date.");
+      setNotice(
+        `Enter a bill name, due date, and an amount between 0.01 and ${MAX_SUBSCRIPTION_AMOUNT.toLocaleString()} ${currency}.`
+      );
       return;
     }
+
+    const baseAmount = convertAmount(cleanAmount, currency, "USD");
 
     setSubscriptions((current) => {
       if (editingId) {
@@ -128,7 +154,7 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
             ? {
                 ...subscription,
                 name: cleanName,
-                amount: cleanAmount,
+                amount: baseAmount,
                 category,
                 dueDate,
                 frequency,
@@ -143,7 +169,7 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
         {
           id: createPlannerId(),
           name: cleanName,
-          amount: cleanAmount,
+          amount: baseAmount,
           category,
           dueDate,
           frequency,
@@ -160,7 +186,7 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
   const startEditing = (subscription: StoredSubscription) => {
     setEditingId(subscription.id);
     setName(subscription.name);
-    setAmount(String(subscription.amount));
+    setAmount(formatEditableMoney(convertAmount(subscription.amount, "USD", currency)));
     setCategory(subscription.category);
     setDueDate(subscription.dueDate);
     setFrequency(subscription.frequency);
@@ -266,12 +292,18 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
                 <span className="text-13 font-semibold text-gray-700">Amount</span>
                 <input
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) =>
+                    setAmount(event.target.value.replace(/[^\d.,]/g, ""))
+                  }
                   className="input-class h-11 px-3 text-14"
-                  min="1"
-                  placeholder="75"
-                  type="number"
+                  inputMode="decimal"
+                  maxLength={12}
+                  placeholder={`75 ${currency}`}
+                  type="text"
                 />
+                <span className="text-11 text-gray-500">
+                  Use up to 2 decimals. Example: 99,50
+                </span>
               </label>
 
               <label className="flex flex-col gap-2">

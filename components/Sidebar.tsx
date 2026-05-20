@@ -79,11 +79,22 @@ const Sidebar = ({ user }: SidebarProps) => {
             </Link>
           )
         })}
+
+        <div className="sidebar-currency-row max-xl:hidden">
+          <p className="text-11 font-semibold uppercase text-gray-500">
+            App currency
+          </p>
+          <CurrencySelector />
+        </div>
       </nav>
 
-      <footer className="footer flex-col items-start gap-2">
+      <footer className="footer">
         <div className="flex w-full items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link
+            href="/settings"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg transition-colors hover:bg-gray-50"
+            aria-label="Open profile settings"
+          >
             <div className="footer_name flex-shrink-0">
               <p className="text-xl font-bold text-white">{firstInitial}</p>
             </div>
@@ -96,15 +107,11 @@ const Sidebar = ({ user }: SidebarProps) => {
                 {user.email}
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors" onClick={handleLogout}>
             <LogOut size={20} className="text-gray-600" />
           </div>
-        </div>
-        
-        <div className="w-full">
-          <CurrencySelector />
         </div>
       </footer>
     </section>

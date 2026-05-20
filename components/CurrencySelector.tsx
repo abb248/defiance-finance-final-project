@@ -52,7 +52,7 @@ const CurrencySelector = () => {
       <select
         value={selectedCurrency}
         onChange={handleChange}
-        className="w-full cursor-pointer rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-14 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-13 font-medium text-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
       >
         {currencies.map((currency) => (
           <option key={currency.code} value={currency.code}>

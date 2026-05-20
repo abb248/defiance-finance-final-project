@@ -26,7 +26,8 @@ import {
   type StoredSavingsGoal,
   type StoredSubscription,
 } from "@/lib/budget-utils";
-import { cn } from "@/lib/utilsz";
+import { useCurrency } from "@/hooks/useCurrency";
+import { cn, convertAmount } from "@/lib/utilsz";
 
 type BudgetManagementProps = {
   accounts: Account[];
@@ -49,11 +50,32 @@ const statusCopy: Record<BudgetAnalysis["status"], { label: string; tone: string
   },
 };
 
+const MAX_BUDGET_LIMIT_USD = 1_000_000;
+
+const parseMoneyInput = (value: string, maxAmount: number) => {
+  const trimmed = value.trim().replace(/\s/g, "");
+  if (!/^\d+([,.]\d{1,2})?$/.test(trimmed)) return null;
+
+  const parsed = Number(trimmed.replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > maxAmount) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const formatEditableMoney = (amount: number) => {
+  if (!Number.isFinite(amount)) return "";
+
+  return Number(amount.toFixed(2)).toString();
+};
+
 const BudgetManagement = ({
   accounts,
   transactions,
   totalCurrentBalance,
 }: BudgetManagementProps) => {
+  const currency = useCurrency();
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
   const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
@@ -89,6 +111,7 @@ const BudgetManagement = ({
   const suggestedLimit = selectedCategorySpending
     ? Math.ceil((selectedCategorySpending * 1.12) / 50) * 50
     : 0;
+  const maxBudgetLimit = convertAmount(MAX_BUDGET_LIMIT_USD, "USD", currency);
 
   const totalBudget = budgetAnalyses.reduce(
     (sum, budget) => sum + budget.monthlyLimit,
@@ -108,7 +131,12 @@ const BudgetManagement = ({
 
   useEffect(() => {
     const planner = getPlannerStateFromStorage();
-    setBudgets(planner.budgets);
+    setBudgets(
+      planner.budgets.filter((budget) => {
+        const limit = Number(budget.monthlyLimit);
+        return Number.isFinite(limit) && limit > 0 && limit <= MAX_BUDGET_LIMIT_USD;
+      })
+    );
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
     setIsLoaded(true);
@@ -137,12 +165,18 @@ const BudgetManagement = ({
     event.preventDefault();
 
     const category = normalizeBudgetCategory(selectedCategory);
-    const limit = Number(monthlyLimit);
+    const limit = parseMoneyInput(monthlyLimit, maxBudgetLimit);
 
     if (!category || !limit || limit <= 0) {
-      setNotice("Choose a category and enter a monthly limit greater than 0.");
+      setNotice(
+        `Choose a category and enter a monthly limit between 0.01 and ${formatEditableMoney(
+          maxBudgetLimit
+        )} ${currency}.`
+      );
       return;
     }
+
+    const baseLimit = convertAmount(limit, currency, "USD");
 
     setBudgets((current) => {
       const withoutSameCategory = current.filter(
@@ -154,7 +188,7 @@ const BudgetManagement = ({
       if (editingBudgetId) {
         return withoutSameCategory.map((budget) =>
           budget.id === editingBudgetId
-            ? { ...budget, category, monthlyLimit: limit }
+            ? { ...budget, category, monthlyLimit: baseLimit }
             : budget
         );
       }
@@ -164,7 +198,7 @@ const BudgetManagement = ({
         {
           id: createPlannerId(),
           category,
-          monthlyLimit: limit,
+          monthlyLimit: baseLimit,
         },
       ];
     });
@@ -181,7 +215,7 @@ const BudgetManagement = ({
     setEditingBudgetId(budget.id);
     setCategoryChoice(budget.category);
     setCustomCategory("");
-    setMonthlyLimit(String(budget.monthlyLimit));
+    setMonthlyLimit(formatEditableMoney(convertAmount(budget.monthlyLimit, "USD", currency)));
     setNotice(`Editing ${budget.category} budget.`);
   };
 
@@ -306,18 +340,28 @@ const BudgetManagement = ({
                 <span className="text-13 font-semibold text-gray-700">Monthly limit</span>
                 <input
                   value={monthlyLimit}
-                  onChange={(event) => setMonthlyLimit(event.target.value)}
+                  onChange={(event) =>
+                    setMonthlyLimit(event.target.value.replace(/[^\d.,]/g, ""))
+                  }
                   className="input-class h-11 px-3 text-14"
-                  min="1"
                   placeholder="Example: 450"
-                  type="number"
+                  inputMode="decimal"
+                  maxLength={12}
+                  type="text"
                 />
+                <span className="text-11 text-gray-500">
+                  Use up to 2 decimals. Max {formatEditableMoney(maxBudgetLimit)} {currency}.
+                </span>
               </label>
 
               {suggestedLimit ? (
                 <button
                   type="button"
-                  onClick={() => setMonthlyLimit(String(suggestedLimit))}
+                  onClick={() =>
+                    setMonthlyLimit(
+                      formatEditableMoney(convertAmount(suggestedLimit, "USD", currency))
+                    )
+                  }
                   className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-left text-13 font-semibold text-blue-700 hover:border-blue-200"
                 >
                   Use suggested limit: <FormattedAmount amount={suggestedLimit} />
@@ -492,7 +536,9 @@ const BudgetManagement = ({
                       type="button"
                       onClick={() => {
                         setCategoryChoice(category.name);
-                        setMonthlyLimit(String(nextLimit));
+                        setMonthlyLimit(
+                          formatEditableMoney(convertAmount(nextLimit, "USD", currency))
+                        );
                         setEditingBudgetId(null);
                         setNotice(`${category.name} is ready with a suggested limit.`);
                       }}
