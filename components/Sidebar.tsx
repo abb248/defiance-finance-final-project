@@ -8,6 +8,7 @@ import { sidebarLinks } from '@/constants'
 import { cn } from '@/lib/utilsz'
 import { logoutAccount } from '@/lib/actions/user.actions'
 import { LogOut } from 'lucide-react'
+import CurrencySelector from './CurrencySelector'
 
 type SidebarProps = {
   user: {
@@ -80,22 +81,30 @@ const Sidebar = ({ user }: SidebarProps) => {
         })}
       </nav>
 
-      <footer className="footer">
-        <div className="footer_name">
-          <p className="text-xl font-bold text-gray-700">{firstInitial}</p>
-        </div>
+      <footer className="footer flex-col items-start gap-2">
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="footer_name flex-shrink-0">
+              <p className="text-xl font-bold text-gray-700">{firstInitial}</p>
+            </div>
 
-        <div className="footer_email flex-1">
-          <h1 className="text-14 truncate font-semibold text-gray-700">
-            {fullName}
-          </h1>
-          <p className="text-14 truncate font-normal text-gray-600">
-            {user.email}
-          </p>
-        </div>
+            <div className="footer_email flex-1 min-w-0">
+              <h1 className="text-14 truncate font-semibold text-gray-700">
+                {fullName}
+              </h1>
+              <p className="text-14 truncate font-normal text-gray-600">
+                {user.email}
+              </p>
+            </div>
+          </div>
 
-        <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors" onClick={handleLogout}>
-          <LogOut size={20} className="text-gray-600" />
+          <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors" onClick={handleLogout}>
+            <LogOut size={20} className="text-gray-600" />
+          </div>
+        </div>
+        
+        <div className="w-full">
+          <CurrencySelector />
         </div>
       </footer>
     </section>

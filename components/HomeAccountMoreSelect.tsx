@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import { Check, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -106,7 +107,7 @@ const HomeAccountMoreSelect = ({
                       {accountTitle}
                     </p>
                     <p className="text-12 text-gray-600">
-                      {formatAmount(account.currentBalance || 0)}
+                      <FormattedAmount amount={account.currentBalance || 0} />
                     </p>
                   </div>
 

@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import { Check, ChevronDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,7 +36,7 @@ const TransactionAccountSelect = ({
     : selected?.name || selected?.bankName || "Bank account";
   const shortName = title.slice(0, 2).toUpperCase();
   const balanceText = isAllSelected
-    ? `${accounts.length} accounts - ${formatAmount(totalCurrentBalance)}`
+    ? `${accounts.length} accounts - $<FormattedAmount amount={totalCurrentBalance} />`
     : formatAmount(selected?.currentBalance || 0);
 
   useEffect(() => {
@@ -123,7 +124,7 @@ const TransactionAccountSelect = ({
                     All accounts
                   </p>
                   <p className="text-12 text-gray-600">
-                    {accounts.length} accounts - {formatAmount(totalCurrentBalance)}
+                    {accounts.length} accounts - <FormattedAmount amount={totalCurrentBalance} />
                   </p>
                 </div>
 
@@ -167,7 +168,7 @@ const TransactionAccountSelect = ({
                     </p>
                     <p className="text-12 text-gray-600">
                       {account.bankName || account.subtype || "Account"} -{" "}
-                      {formatAmount(account.currentBalance || 0)}
+                      <FormattedAmount amount={account.currentBalance || 0} />
                     </p>
                   </div>
 

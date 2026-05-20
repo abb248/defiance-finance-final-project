@@ -1,5 +1,6 @@
 import DefaultReceivingAccountSelect from "@/components/DefaultReceivingAccountSelect";
 import HeaderBox from "@/components/HeaderBox";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 import { getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { redirect } from "next/navigation";
@@ -25,7 +26,7 @@ const SettingsPage = async () => {
         subtext="Manage your preferences and default receiving account."
       />
 
-      <section className="size-full pt-5">
+      <section className="w-full pt-5 pb-5">
         {accountsData.length > 0 ? (
           <DefaultReceivingAccountSelect
             accounts={accountsData}
@@ -36,6 +37,10 @@ const SettingsPage = async () => {
             Connect a bank account first to choose a default receiving account.
           </div>
         )}
+      </section>
+
+      <section className="w-full pt-5 pb-5">
+        <ChangePasswordForm />
       </section>
     </section>
   );

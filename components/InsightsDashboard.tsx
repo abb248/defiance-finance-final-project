@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import Link from "next/link";
 import {
@@ -235,13 +236,13 @@ const InsightsDashboard = ({ report }: InsightsDashboardProps) => {
                     <div className="rounded-md bg-white p-2">
                       Balance
                       <p className="font-bold text-gray-900">
-                        {formatAmount(item.account.balance)}
+                        <FormattedAmount amount={item.account.balance} />
                       </p>
                     </div>
                     <div className="rounded-md bg-white p-2">
                       Spending
                       <p className="font-bold text-gray-900">
-                        {formatAmount(item.account.spending)}
+                        <FormattedAmount amount={item.account.spending} />
                       </p>
                     </div>
                   </div>

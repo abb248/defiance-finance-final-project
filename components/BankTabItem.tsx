@@ -1,3 +1,4 @@
+import { FormattedAmount } from '@/components/FormattedAmount';
 import Link from "next/link";
 
 import { cn, formatAmount } from "@/lib/utilsz";
@@ -36,7 +37,7 @@ const BankTabItem = ({
           {title}
         </p>
         <p className="text-12 text-gray-600">
-          {formatAmount(account.currentBalance || 0)}
+          <FormattedAmount amount={account.currentBalance || 0} />
         </p>
       </div>
     </Link>

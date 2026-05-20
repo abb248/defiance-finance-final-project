@@ -1,3 +1,4 @@
+import { FormattedAmount } from '@/components/FormattedAmount';
 import { formatAmount } from "@/lib/utilsz";
 
 const BankInfo = ({ account }: BankInfoProps) => {
@@ -23,7 +24,7 @@ const BankInfo = ({ account }: BankInfoProps) => {
         <div className="flex shrink-0 flex-col text-right">
           <p className="text-12 text-gray-600">Current Balance</p>
           <p className="text-16 font-semibold text-gray-900">
-            {formatAmount(account.currentBalance || 0)}
+            <FormattedAmount amount={account.currentBalance || 0} />
           </p>
         </div>
       </div>

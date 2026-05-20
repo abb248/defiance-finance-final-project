@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import {
   AlertTriangle,
@@ -197,7 +198,7 @@ const BudgetManagement = ({
             <p className="text-12 font-semibold uppercase text-gray-500">Monthly budget</p>
             <WalletCards size={18} className="text-blue-600" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(totalBudget)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalBudget} /></p>
           <p className="mt-1 text-13 text-gray-600">{budgetAnalyses.length} active categories</p>
         </div>
 
@@ -206,7 +207,7 @@ const BudgetManagement = ({
             <p className="text-12 font-semibold uppercase text-gray-500">Used this month</p>
             <PiggyBank size={18} className="text-emerald-600" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(totalSpent)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalSpent} /></p>
           <p className="mt-1 text-13 text-gray-600">{usedPercentage}% of planned budget</p>
         </div>
 
@@ -221,7 +222,7 @@ const BudgetManagement = ({
               "text-gray-900": totalRemaining >= 0,
             })}
           >
-            {formatAmount(totalRemaining)}
+            <FormattedAmount amount={totalRemaining} />
           </p>
           <p className="mt-1 text-13 text-gray-600">
             Across {accounts.length} connected accounts
@@ -235,7 +236,7 @@ const BudgetManagement = ({
           </div>
           <p className="mt-3 text-24 font-bold text-gray-900">{riskCount}</p>
           <p className="mt-1 text-13 text-gray-600">
-            Total balance {formatAmount(totalCurrentBalance)}
+            Total balance <FormattedAmount amount={totalCurrentBalance} />
           </p>
         </div>
       </section>
@@ -319,7 +320,7 @@ const BudgetManagement = ({
                   onClick={() => setMonthlyLimit(String(suggestedLimit))}
                   className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-left text-13 font-semibold text-blue-700 hover:border-blue-200"
                 >
-                  Use suggested limit: {formatAmount(suggestedLimit)}
+                  Use suggested limit: <FormattedAmount amount={suggestedLimit} />
                 </button>
               ) : null}
 
@@ -346,7 +347,7 @@ const BudgetManagement = ({
                         {category.name}
                       </p>
                       <p className="text-12 text-gray-600">
-                        {formatAmount(category.amount)}
+                        <FormattedAmount amount={category.amount} />
                       </p>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-gray-100">
@@ -394,7 +395,7 @@ const BudgetManagement = ({
                         </div>
                         <p className="mt-1 text-13 text-gray-600">
                           {formatAmount(Math.max(0, budget.remaining))} left from{" "}
-                          {formatAmount(budget.monthlyLimit)}
+                          <FormattedAmount amount={budget.monthlyLimit} />
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -419,7 +420,7 @@ const BudgetManagement = ({
 
                     <div className="mt-5">
                       <div className="mb-2 flex items-center justify-between text-12 font-semibold text-gray-600">
-                        <span>{formatAmount(budget.spent)} spent</span>
+                        <span><FormattedAmount amount={budget.spent} /> spent</span>
                         <span>{budget.percentage}%</span>
                       </div>
                       <div className="h-3 overflow-hidden rounded-full bg-gray-100">
@@ -450,9 +451,9 @@ const BudgetManagement = ({
                             ? "This category is close to the limit."
                             : "This category is under control for now."}{" "}
                           {budget.suggestedLimit > budget.monthlyLimit
-                            ? `A safer limit could be ${formatAmount(
+                            ? `A safer limit could be $<FormattedAmount amount={
                                 budget.suggestedLimit
-                              )}.`
+                              } />.`
                             : ""}
                         </p>
                       </div>
@@ -495,10 +496,10 @@ const BudgetManagement = ({
                     >
                       <p className="text-14 font-semibold text-gray-800">{category.name}</p>
                       <p className="mt-1 text-12 text-gray-600">
-                        Spent {formatAmount(category.amount)} this month
+                        Spent <FormattedAmount amount={category.amount} /> this month
                       </p>
                       <p className="mt-2 text-12 font-semibold text-blue-700">
-                        Suggest {formatAmount(nextLimit)}
+                        Suggest <FormattedAmount amount={nextLimit} />
                       </p>
                     </button>
                   );

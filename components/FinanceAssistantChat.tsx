@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import {
   askFinanceAssistant,
@@ -423,7 +424,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                         </p>
                         <p className="text-12 text-gray-600">
                           {formatAmount(Math.max(0, budget.remaining))} left from{" "}
-                          {formatAmount(budget.monthlyLimit)}
+                          <FormattedAmount amount={budget.monthlyLimit} />
                         </p>
                       </div>
                       <button
@@ -538,8 +539,8 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                           {goal.name}
                         </p>
                         <p className="text-12 text-gray-600">
-                          {formatAmount(goal.remaining)} left to reach{" "}
-                          {formatAmount(goal.targetAmount)}
+                          <FormattedAmount amount={goal.remaining} /> left to reach{" "}
+                          <FormattedAmount amount={goal.targetAmount} />
                         </p>
                       </div>
                       <button
@@ -592,20 +593,20 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
             <div className="rounded-lg bg-gray-25 p-3">
               <p className="text-12 text-gray-600">Spent</p>
               <p className="mt-1 text-18 font-bold text-gray-900">
-                {formatAmount(overview.monthSpent)}
+                <FormattedAmount amount={overview.monthSpent} />
               </p>
             </div>
             <div className="rounded-lg bg-gray-25 p-3">
               <p className="text-12 text-gray-600">Income</p>
               <p className="mt-1 text-18 font-bold text-gray-900">
-                {formatAmount(overview.monthIncome)}
+                <FormattedAmount amount={overview.monthIncome} />
               </p>
             </div>
           </div>
           <div className="mt-3 rounded-lg bg-blue-50 p-3">
             <p className="text-12 text-blue-700">Projected spending</p>
             <p className="mt-1 text-18 font-bold text-blue-900">
-              {formatAmount(overview.projectedMonthSpending)}
+              <FormattedAmount amount={overview.projectedMonthSpending} />
             </p>
           </div>
         </div>
@@ -643,7 +644,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                   <p className="truncate text-14 font-semibold text-gray-700">{account.name}</p>
                   <p className="truncate text-12 text-gray-500">{account.bankName}</p>
                 </div>
-                <p className="text-14 font-bold text-gray-900">{formatAmount(account.balance)}</p>
+                <p className="text-14 font-bold text-gray-900"><FormattedAmount amount={account.balance} /></p>
               </div>
             ))}
           </div>

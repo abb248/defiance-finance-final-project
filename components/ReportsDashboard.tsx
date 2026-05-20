@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import Link from "next/link";
 import {
@@ -124,28 +125,28 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Income"
-          value={formatAmount(report.currentMonthIncome)}
+          value=<FormattedAmount amount={report.currentMonthIncome} />
           detail={`Money in during ${report.monthLabel}`}
           icon={<ArrowUpRight size={20} />}
           tone="green"
         />
         <MetricCard
           label="Spending"
-          value={formatAmount(report.currentMonthSpending)}
+          value=<FormattedAmount amount={report.currentMonthSpending} />
           detail={`${report.spendingChangePercent}% vs ${report.previousMonthLabel}`}
           icon={spendingChangeIsUp ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
           tone={spendingChangeIsUp ? "red" : "blue"}
         />
         <MetricCard
           label="Net cash flow"
-          value={formatAmount(report.currentMonthNet)}
+          value=<FormattedAmount amount={report.currentMonthNet} />
           detail={`${report.transactionCount} transactions this month`}
           icon={<ArrowDownRight size={20} />}
           tone={report.currentMonthNet >= 0 ? "blue" : "red"}
         />
         <MetricCard
           label="Average expense"
-          value={formatAmount(report.averageExpense)}
+          value=<FormattedAmount amount={report.averageExpense} />
           detail="Average debit transaction"
           icon={<ReceiptText size={20} />}
           tone="gray"
@@ -230,7 +231,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
               </p>
               <p className="mt-1 text-13 text-gray-600">
                 {topGoal
-                  ? `${topGoal.percentage}% complete, ${formatAmount(topGoal.remaining)} left`
+                  ? `${topGoal.percentage}% complete, $<FormattedAmount amount={topGoal.remaining} /> left`
                   : "Add one from Goals"}
               </p>
             </div>
@@ -239,7 +240,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
                 Fixed costs
               </p>
               <p className="mt-2 truncate text-18 font-bold text-gray-900">
-                {formatAmount(recurringMonthlyTotal)}
+                <FormattedAmount amount={recurringMonthlyTotal} />
               </p>
               <p className="mt-1 text-13 text-gray-600">
                 {upcomingSubscription
@@ -259,7 +260,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
                 <p className="text-13 font-semibold">Current balance</p>
               </div>
               <p className="mt-2 text-20 font-bold text-gray-900">
-                {formatAmount(report.totalCurrentBalance)}
+                <FormattedAmount amount={report.totalCurrentBalance} />
               </p>
             </div>
             <div className="rounded-lg bg-gray-25 p-4">

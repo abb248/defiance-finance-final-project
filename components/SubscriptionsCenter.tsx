@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import {
   AlertTriangle,
@@ -188,7 +189,7 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
             <p className="text-12 font-semibold uppercase text-gray-500">Monthly fixed cost</p>
             <Repeat size={18} className="text-blue-600" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(monthlyTotal)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={monthlyTotal} /></p>
           <p className="mt-1 text-13 text-gray-600">{subscriptionAnalyses.length} tracked bills</p>
         </div>
 
@@ -197,7 +198,7 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
             <p className="text-12 font-semibold uppercase text-gray-500">Yearly estimate</p>
             <ReceiptText size={18} className="text-indigo-700" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(yearlyTotal)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={yearlyTotal} /></p>
           <p className="mt-1 text-13 text-gray-600">Estimated recurring spend</p>
         </div>
 
@@ -395,13 +396,13 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
                   <div className="rounded-lg bg-gray-25 p-3">
                     <p className="text-12 text-gray-600">Amount</p>
                     <p className="mt-1 text-16 font-bold text-gray-900">
-                      {formatAmount(subscription.amount)}
+                      <FormattedAmount amount={subscription.amount} />
                     </p>
                   </div>
                   <div className="rounded-lg bg-gray-25 p-3">
                     <p className="text-12 text-gray-600">Monthly cost</p>
                     <p className="mt-1 text-16 font-bold text-gray-900">
-                      {formatAmount(subscription.monthlyAmount)}
+                      <FormattedAmount amount={subscription.monthlyAmount} />
                     </p>
                   </div>
                   <div className="rounded-lg bg-gray-25 p-3">

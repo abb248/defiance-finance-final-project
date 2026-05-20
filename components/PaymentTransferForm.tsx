@@ -28,6 +28,7 @@ const paymentTransferSchema = z.object({
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     'Amount must be greater than 0.'
   ),
+  currency: z.string().min(1, 'Please select a currency.'),
 })
 
 type PaymentTransferFormValues = z.infer<typeof paymentTransferSchema>
@@ -68,6 +69,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
       email: '',
       shareableId: '',
       amount: '',
+      currency: 'USD',
     },
   })
 
@@ -142,6 +144,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
       const result = await createTransfer({
         amount,
         memo,
+        currency: data.currency,
       })
 
       if (result && result.client_secret) {
@@ -396,6 +399,38 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
                       ) : null}
                     </>
                   )}
+                  <FormMessage className="form-message mt-2" />
+                </div>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="currency"
+          render={({ field }) => (
+            <FormItem className="border-t border-gray-200 pb-6 pt-5">
+              <div className="payment-transfer_form-item">
+                <div className="payment-transfer_form-content">
+                  <FormLabel className="text-14 font-medium text-gray-700">
+                    Currency
+                  </FormLabel>
+                </div>
+                <div className="flex w-full flex-1 flex-col">
+                  <FormControl>
+                    <select
+                      className="input-class bg-white border border-gray-300 text-gray-900 rounded-lg py-2.5 px-4 focus:ring-blue-500 focus:border-blue-500 block w-full"
+                      {...field}
+                      id="transfer-currency"
+                    >
+                      <option value="USD">USD - US Dollar</option>
+                      <option value="TRY">TRY - Turkish Lira</option>
+                      <option value="EUR">EUR - Euro</option>
+                      <option value="GBP">GBP - British Pound</option>
+                      <option value="CAD">CAD - Canadian Dollar</option>
+                    </select>
+                  </FormControl>
                   <FormMessage className="form-message mt-2" />
                 </div>
               </div>

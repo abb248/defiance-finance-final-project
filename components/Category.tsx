@@ -1,3 +1,4 @@
+import { FormattedAmount } from '@/components/FormattedAmount';
 import { CircleDollarSign, CreditCard, Landmark, WalletCards } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
@@ -52,7 +53,7 @@ const Category = ({ category, index }: CategoryProps) => {
           </div>
 
           <p className="text-12 text-gray-500">
-            {formatAmount(category.totalAmount)} spent
+            <FormattedAmount amount={category.totalAmount} /> spent
           </p>
         </div>
       </div>

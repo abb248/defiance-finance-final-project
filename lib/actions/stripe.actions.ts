@@ -9,8 +9,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   typescript: true,
 });
 
-// 1. KULLANICI OLUŞTURMA FONKSİYONU
-// Sitemize biri kayıt olduğunda, onu Stripe'a da "Müşteri" olarak kaydedeceğiz
+// 1. CREATE USER FUNCTION
+// When someone registers, we will also save them to Stripe as a "Customer"
 export const createStripeCustomer = async ({ name, email }: { name: string, email: string }) => {
   try {
     const customer = await stripe.customers.create({
@@ -18,33 +18,33 @@ export const createStripeCustomer = async ({ name, email }: { name: string, emai
       email,
     });
 
-    // Stripe bize müşteri ID'si dönecek (Örn: cus_12345)
+    // Stripe will return a customer ID (e.g., cus_12345)
     return parseStringify(customer);
   } catch (error) {
-    console.error("Stripe müşteri oluşturma hatası:", error);
-    throw new Error("Stripe üzerinde müşteri oluşturulamadı.");
+    console.error("Stripe customer creation error:", error);
+    throw new Error("Could not create customer on Stripe.");
   }
 };
 
-// 2. PARA TRANSFERİ (ÖDEME) BAŞLATMA FONKSİYONU
-// Kullanıcı "Para Gönder" dediğinde çalışacak
-export const createTransfer = async ({ amount, memo }: { amount: number, memo: string }) => {
+// 2. INITIATE MONEY TRANSFER (PAYMENT)
+// Will run when user clicks "Transfer Funds"
+export const createTransfer = async ({ amount, memo, currency = 'USD' }: { amount: number, memo: string, currency?: string }) => {
   try {
-    // ÖNEMLİ: Stripe'da paralar kuruş/cent cinsinden işlenir. (Yani 10 TL = 1000 kuruş)
-    // Bu yüzden gelen amount değerini 100 ile çarpıyoruz.
+    // IMPORTANT: Stripe processes amounts in cents. (e.g. 10 USD = 1000 cents)
+    // So we multiply the amount by 100.
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
-      currency: "try", // Projeni Türkiye uyumlu yaptığımız için TRY seçtik
-      description: memo, // İşlem açıklaması (Örn: "Kira ödemesi")
+      currency: currency.toLowerCase(),
+      description: memo, // Transaction description
       automatic_payment_methods: {
         enabled: true,
       },
     });
 
-    // Başarıyla oluşursa, bize front-end'de ödeme ekranını açacak bir "Client Secret" döner
+    // On success, returns a "Client Secret" to open the payment screen on the front-end
     return parseStringify(paymentIntent);
   } catch (error) {
-    console.error("Stripe transfer hatası:", error);
-    throw new Error("Transfer işlemi başlatılamadı.");
+    console.error("Stripe transfer error:", error);
+    throw new Error("Could not initiate transfer.");
   }
 };

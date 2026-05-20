@@ -118,11 +118,11 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     return { user: JSON.parse(JSON.stringify(authData.user)), error: null };
 
   } catch (error: any) {
-    console.error('Kayıt olurken bir hata oluştu:', error);
+    console.error('Error during sign up:', error);
     const message =
       error?.message ||
       (typeof error === 'string' ? error : null) ||
-      'Kayıt olurken bir hata oluştu.';
+      'An error occurred during sign up.';
     return { user: null, error: message };
   }
 }
@@ -153,11 +153,11 @@ export const signIn = async ({ email, password }: signInProps): Promise<ActionRe
 
     return { user: JSON.parse(JSON.stringify(data.user)), error: null };
   } catch (error: any) {
-    console.error('Giriş yapılırken hata oluştu:', error);
+    console.error('Error during sign in:', error);
     const message =
       error?.message ||
       (typeof error === 'string' ? error : null) ||
-      'Giriş yapılırken hata oluştu.';
+      'An error occurred during sign in.';
     return { user: null, error: message };
   }
 }
@@ -188,7 +188,7 @@ export const getLoggedInUser = async () => {
       if (error && isMissingColumn) continue;
 
       if (error) {
-        console.error('Kullanıcı profili çekilemedi:', error);
+        console.error('Could not fetch user profile:', error);
         break;
       }
 
@@ -200,7 +200,7 @@ export const getLoggedInUser = async () => {
 
     return JSON.parse(JSON.stringify({ ...user, ...userProfile }));
   } catch (error) {
-    console.error("Kullanıcı oturumu alınamadı:", error);
+    console.error("Could not get user session:", error);
     return null;
   }
 }
@@ -211,7 +211,7 @@ export const logoutAccount = async () => {
     const supabase = await createSessionClient();
     await supabase.auth.signOut();
   } catch (error) {
-    console.error("Çıkış yapılırken hata:", error);
+    console.error("Error during logout:", error);
     return null;
   }
 }
@@ -229,7 +229,7 @@ export const enroll2FA = async () => {
     
     return JSON.parse(JSON.stringify(data)); 
   } catch (error) {
-    console.error("2FA Kayıt Hatası:", error);
+    console.error("2FA Enrollment Error:", error);
     return null;
   }
 };
@@ -244,7 +244,7 @@ export const challenge2FA = async (factorId: string) => {
     
     return JSON.parse(JSON.stringify(data));
   } catch (error) {
-    console.error("2FA Challenge Hatası:", error);
+    console.error("2FA Challenge Error:", error);
     return null;
   }
 };
@@ -263,7 +263,7 @@ export const verify2FA = async (factorId: string, challengeId: string, code: str
     
     return JSON.parse(JSON.stringify(data));
   } catch (error) {
-    console.error("2FA Doğrulama Hatası:", error);
+    console.error("2FA Verification Error:", error);
     return null;
   }
 };
@@ -278,7 +278,23 @@ export const getMfaStatus = async () => {
     // nextLevel 'aal2' ise kullanıcının halihazırda onaylanmış bir 2FA faktörü var demektir.
     return data.nextLevel === 'aal2';
   } catch (error) {
-    console.error("MFA durumu alınamadı:", error);
+    console.error("Could not get MFA status:", error);
     return false;
+  }
+};
+
+export const updateUserPassword = async (newPassword: string) => {
+  try {
+    const supabase = await createSessionClient();
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Password update error:", error);
+    return { success: false, error: error.message || "Password could not be updated." };
   }
 };

@@ -1,4 +1,6 @@
-"use client"; // Buton tıklaması (onClick) için client component olması gerekiyor
+"use client";
+
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
@@ -331,7 +333,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
                     {upcomingSubscription.name}
                   </p>
                   <p className="mt-1 text-12 text-gray-600">
-                    {formatAmount(upcomingSubscription.amount)} •{' '}
+                    <FormattedAmount amount={upcomingSubscription.amount} /> •{' '}
                     {upcomingSubscription.daysUntilDue < 0
                       ? `${Math.abs(upcomingSubscription.daysUntilDue)} days late`
                       : `${upcomingSubscription.daysUntilDue} days left`}
@@ -393,7 +395,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
                   </p>
                   <p className="mt-1 text-12 text-gray-600">
                     {formatAmount(Math.max(0, budgetRisk.remaining))} left from{' '}
-                    {formatAmount(budgetRisk.monthlyLimit)}
+                    <FormattedAmount amount={budgetRisk.monthlyLimit} />
                   </p>
                 </div>
                 <div
@@ -448,8 +450,8 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
                     {goalFocus.name}
                   </p>
                   <p className="mt-1 text-12 text-gray-600">
-                    {formatAmount(goalFocus.remaining)} left from{' '}
-                    {formatAmount(goalFocus.targetAmount)}
+                    <FormattedAmount amount={goalFocus.remaining} /> left from{' '}
+                    <FormattedAmount amount={goalFocus.targetAmount} />
                   </p>
                 </div>
                 <div

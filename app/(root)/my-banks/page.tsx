@@ -1,10 +1,11 @@
+import { FormattedAmount } from '@/components/FormattedAmount';
 import BankCard from "@/components/ui/BankCard";
 import HeaderBox from "@/components/HeaderBox";
 import { getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
-import { formatAmount } from "@/lib/utilsz";
 import { Building2, CreditCard, Wallet } from "lucide-react";
 import { redirect } from "next/navigation";
+
 const MyBanks = async () => {
   const loggedIn = await getLoggedInUser();
   if (!loggedIn) redirect("/sign-in");
@@ -53,7 +54,7 @@ const MyBanks = async () => {
               <div>
                 <p className="my-banks-stat-label">Combined balance</p>
                 <p className="my-banks-stat-value">
-                  {formatAmount(accounts?.totalCurrentBalance || 0)}
+                  <FormattedAmount amount={accounts?.totalCurrentBalance || 0} />
                 </p>
               </div>
             </div>

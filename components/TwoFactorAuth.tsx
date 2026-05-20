@@ -32,10 +32,10 @@ const TwoFactorAuth = () => {
         setQrCode(data.totp.uri || data.totp.qr_code); 
         setStep("scan");
       } else {
-        setError("QR Kod oluşturulamadı. Lütfen tekrar deneyin.");
+        setError("Could not generate QR code. Please try again.");
       }
     } catch (err) {
-      setError("Bir hata oluştu.");
+      setError("An error occurred.");
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ const TwoFactorAuth = () => {
 
   const handleVerify = async () => {
     if (code.length !== 6) {
-      setError("Lütfen 6 haneli kodu eksiksiz girin.");
+      setError("Please enter the 6-digit code completely.");
       return;
     }
     setLoading(true);
@@ -51,17 +51,17 @@ const TwoFactorAuth = () => {
     try {
     
       const challengeData = await challenge2FA(factorId);
-      if (!challengeData?.id) throw new Error("Doğrulama başlatılamadı.");
+      if (!challengeData?.id) throw new Error("Verification could not be initiated.");
 
     
       const verifyData = await verify2FA(factorId, challengeData.id, code);
       if (verifyData) {
         setStep("success");
       } else {
-        setError("Geçersiz kod! Lütfen uygulamanızdaki güncel kodu girin.");
+        setError("Invalid code! Please enter the current code from your app.");
       }
     } catch (err) {
-      setError("Doğrulama başarısız oldu.");
+      setError("Verification failed.");
     } finally {
       setLoading(false);
     }
@@ -69,16 +69,14 @@ const TwoFactorAuth = () => {
 
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 shadow-sm max-w-md mx-auto mt-8">
-      <h2 className="text-24 font-bold text-gray-900 mb-2">İki Faktörlü Doğrulama (2FA)</h2>
+      <h2 className="text-24 font-bold text-gray-900 mb-2">Two-Factor Authentication (2FA)</h2>
       
-    {/* BAŞLANGIÇ EKRANI */}
       {step === "init" && (
         <div className="text-center">
           <p className="text-14 text-gray-500 mb-6">
-            Hesabınızı yetkisiz girişlere karşı korumak için Google veya Microsoft Authenticator ile bağlayın.
+            Secure your account against unauthorized access by linking it with Google or Microsoft Authenticator.
           </p>
           
-          {/*  Arka plandaki hatayı ekranda görmek için */}
           {error && <p className="text-14 text-red-500 font-semibold mb-4">{error}</p>}
 
           <button
@@ -86,16 +84,15 @@ const TwoFactorAuth = () => {
             disabled={loading}
             className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-all disabled:bg-blue-300"
           >
-            {loading ? "Yükleniyor..." : "2FA'yı Aktif Et"}
+            {loading ? "Loading..." : "Enable 2FA"}
           </button>
         </div>
       )}
 
-      {/* QR KOD OKUTMA VE ŞİFRE GİRME EKRANI */}
       {step === "scan" && (
         <div className="flex flex-col items-center w-full">
           <p className="text-14 text-gray-600 text-center mb-4">
-            Aşağıdaki QR kodu Authenticator uygulamanızla okutun.
+            Scan the QR code below with your Authenticator app.
           </p>
           
           <div className="bg-white p-4 rounded-lg mb-6 flex justify-center w-full">
@@ -115,8 +112,8 @@ const TwoFactorAuth = () => {
             type="text"
             maxLength={6}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} // Sadece rakam
-            placeholder="6 Haneli Kod"
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} 
+            placeholder="6-Digit Code"
             className="w-full border border-gray-300 rounded-lg p-3 text-center text-20 tracking-widest mb-4 focus:ring-2 focus:ring-blue-600 focus:outline-none"
           />
 
@@ -125,7 +122,7 @@ const TwoFactorAuth = () => {
             disabled={loading || code.length !== 6}
             className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-all disabled:bg-blue-300"
           >
-            {loading ? "Doğrulanıyor..." : "Kodu Onayla"}
+            {loading ? "Verifying..." : "Verify Code"}
           </button>
         </div>
       )}
@@ -137,14 +134,13 @@ const TwoFactorAuth = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h3 className="text-18 font-semibold text-green-700 mb-2">2FA Başarıyla Aktif Edildi!</h3>
+          <h3 className="text-18 font-semibold text-green-700 mb-2">2FA Successfully Enabled!</h3>
           <p className="text-14 text-gray-500">
-            Hesabınız artık banka standartlarında korunuyor.
+            Your account is now protected with bank-grade security.
           </p>
         </div>
       )}
 
-      {/* ZATEN AKTİF EKRANI */}
       {step === "active" && (
         <div className="text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -152,9 +148,9 @@ const TwoFactorAuth = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <h3 className="text-18 font-semibold text-blue-700 mb-2">2FA Zaten Aktif</h3>
+          <h3 className="text-18 font-semibold text-blue-700 mb-2">2FA is Already Active</h3>
           <p className="text-14 text-gray-500">
-            Hesabınız şu anda Google veya Microsoft Authenticator ile korunuyor.
+            Your account is currently protected by Google or Microsoft Authenticator.
           </p>
         </div>
       )}

@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -99,7 +100,7 @@ const BankDropdown = ({
             {displayed ? (
               <span className="block truncate text-12 text-gray-500">
                 {displayed.bankName || "Account"} ·{" "}
-                {formatAmount(displayed.currentBalance || 0)}
+                <FormattedAmount amount={displayed.currentBalance || 0} />
               </span>
             ) : null}
           </div>
@@ -155,7 +156,7 @@ const BankDropdown = ({
                   </span>
                   <span className="truncate text-12 text-gray-500">
                     {account.bankName || "Account"} ·{" "}
-                    {formatAmount(account.currentBalance || 0)}
+                    <FormattedAmount amount={account.currentBalance || 0} />
                   </span>
                 </div>
                 {isSelected ? (

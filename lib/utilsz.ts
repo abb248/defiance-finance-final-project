@@ -11,10 +11,31 @@ export const getAccountIdentifier = (account: {
   id?: string;
 }) => String(account.shareableId || account.supabaseItemId || account.id || "");
 
-export const formatAmount = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
+// Exchange rates relative to USD (Mock values)
+export const EXCHANGE_RATES: Record<string, number> = {
+  USD: 1,
+  TRY: 32.25,
+  EUR: 0.92,
+  GBP: 0.79,
+  CAD: 1.36,
+};
+
+export const convertAmount = (amount: number, fromCurrency: string, toCurrency: string) => {
+  const amountInUSD = amount / (EXCHANGE_RATES[fromCurrency] || 1);
+  return amountInUSD * (EXCHANGE_RATES[toCurrency] || 1);
+};
+
+export const formatAmount = (amount: number, currency: string = "USD") => {
+  const locales: Record<string, string> = {
+    USD: "en-US",
+    TRY: "tr-TR",
+    EUR: "de-DE",
+    GBP: "en-GB",
+    CAD: "en-CA"
+  };
+  return new Intl.NumberFormat(locales[currency] || "en-US", {
     style: "currency",
-    currency: "USD",
+    currency: currency,
   }).format(amount);
 };
 

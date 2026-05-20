@@ -1,11 +1,11 @@
+import { FormattedAmount } from '@/components/FormattedAmount';
 import HeaderBox from "@/components/HeaderBox";
 import TransactionAccountSelect from "@/components/TransactionAccountSelect";
 import TransactionFilters from "@/components/TransactionFilters";
 import Pagination from "@/components/Pagination";
 import TransactionsTable from "@/components/TransactionsTable";
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
-import { getLoggedInUser } from "@/lib/actions/user.actions";
-import { formatAmount } from "@/lib/utilsz";
+import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { redirect } from "next/navigation";
 
 const ROWS_PER_PAGE = 10;
@@ -282,11 +282,11 @@ const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
                 {isAllAccounts ? "Total Balance" : "Current Balance"}
               </p>
               <p className="text-24 font-bold">
-                {formatAmount(
+                <FormattedAmount amount={
                   isAllAccounts
                     ? Number(accounts?.totalCurrentBalance) || 0
                     : selectedAccount?.currentBalance || 0
-                )}
+                } />
               </p>
             </div>
           </div>
@@ -307,7 +307,7 @@ const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
                 Filtered income
               </p>
               <p className="mt-2 text-20 font-bold text-success-700">
-                {formatAmount(totals.income)}
+                <FormattedAmount amount={totals.income} />
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -315,7 +315,7 @@ const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
                 Filtered spending
               </p>
               <p className="mt-2 text-20 font-bold text-[#F04438]">
-                {formatAmount(totals.expense)}
+                <FormattedAmount amount={totals.expense} />
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -323,7 +323,7 @@ const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
                 Net movement
               </p>
               <p className="mt-2 text-20 font-bold text-gray-900">
-                {formatAmount(totals.net)}
+                <FormattedAmount amount={totals.net} />
               </p>
             </div>
           </div>

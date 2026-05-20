@@ -1,4 +1,5 @@
 "use client";
+import { FormattedAmount } from '@/components/FormattedAmount';
 
 import {
   AlertTriangle,
@@ -171,7 +172,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
       )
     );
     setContributions((current) => ({ ...current, [goal.id]: "" }));
-    setNotice(`${formatAmount(contribution)} was added to ${goal.name}.`);
+    setNotice(`$<FormattedAmount amount={contribution} /> was added to ${goal.name}.`);
   };
 
   return (
@@ -182,7 +183,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
             <p className="text-12 font-semibold uppercase text-gray-500">Goal target</p>
             <Target size={18} className="text-blue-600" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(totalTarget)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalTarget} /></p>
           <p className="mt-1 text-13 text-gray-600">{goalAnalyses.length} active goals</p>
         </div>
 
@@ -191,7 +192,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
             <p className="text-12 font-semibold uppercase text-gray-500">Saved</p>
             <PiggyBank size={18} className="text-success-700" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(totalSaved)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalSaved} /></p>
           <p className="mt-1 text-13 text-gray-600">{overallPercentage}% of all goals</p>
         </div>
 
@@ -200,9 +201,9 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
             <p className="text-12 font-semibold uppercase text-gray-500">Remaining</p>
             <Wallet size={18} className="text-indigo-700" />
           </div>
-          <p className="mt-3 text-24 font-bold text-gray-900">{formatAmount(totalRemaining)}</p>
+          <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalRemaining} /></p>
           <p className="mt-1 text-13 text-gray-600">
-            {accounts.length} accounts, balance {formatAmount(totalCurrentBalance)}
+            {accounts.length} accounts, balance <FormattedAmount amount={totalCurrentBalance} />
           </p>
         </div>
 
@@ -333,8 +334,8 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
                           </span>
                         </div>
                         <p className="mt-1 text-13 text-gray-600">
-                          {formatAmount(goal.remaining)} left from{" "}
-                          {formatAmount(goal.targetAmount)}
+                          <FormattedAmount amount={goal.remaining} /> left from{" "}
+                          <FormattedAmount amount={goal.targetAmount} />
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -359,7 +360,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
 
                     <div className="mt-5">
                       <div className="mb-2 flex items-center justify-between text-12 font-semibold text-gray-600">
-                        <span>{formatAmount(goal.currentAmount)} saved</span>
+                        <span><FormattedAmount amount={goal.currentAmount} /> saved</span>
                         <span>{goal.percentage}%</span>
                       </div>
                       <div className="h-3 overflow-hidden rounded-full bg-gray-100">

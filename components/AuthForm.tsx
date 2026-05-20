@@ -69,7 +69,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
       } else if (result?.user) {
         setUser(result.user as any);
       } else {
-        setFormError('Kayıt başarısız. Lütfen tekrar deneyin.');
+        setFormError('Sign-up failed. Please try again.');
       }
     }
 
@@ -89,12 +89,12 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
       } else if (result?.user) {
         router.push('/');
       } else {
-        setFormError('Giriş başarısız. Lütfen tekrar deneyin.');
+        setFormError('Sign-in failed. Please try again.');
       }
     }
   } catch (error) {
-    console.log("Form gönderilirken hata:", error);
-    setFormError('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
+    console.log("Error submitting form:", error);
+    setFormError('An unexpected error occurred. Please try again.');
   } finally {
     setIsLoading(false);
   }
@@ -103,7 +103,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
 const handleMfaSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   if (mfaCode.length !== 6) {
-    setFormError('Lütfen 6 haneli kodu eksiksiz girin.');
+    setFormError('Please enter the 6-digit code completely.');
     return;
   }
   
@@ -111,16 +111,16 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
   setFormError(null);
   try {
     const challenge = await challenge2FA(factorId);
-    if (!challenge?.id) throw new Error("Doğrulama başlatılamadı.");
+    if (!challenge?.id) throw new Error("Verification could not be initiated.");
     
     const verify = await verify2FA(factorId, challenge.id, mfaCode);
     if (verify) {
       router.push('/');
     } else {
-      setFormError("Geçersiz kod! Lütfen uygulamanızdaki güncel kodu girin.");
+      setFormError("Invalid code! Please enter the current code from your app.");
     }
   } catch (err) {
-    setFormError("Doğrulama başarısız oldu.");
+    setFormError("Verification failed.");
   } finally {
     setIsLoading(false);
   }
@@ -128,7 +128,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
  
 
   return (
-    <section className="auth-form">
+    <section className="relative z-10 w-full flex flex-col justify-center gap-8 rounded-[30px] border border-white/20 bg-white/10 p-10 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] transition-all">
       <header className="flex flex-col gap-5 md:gap-8">
         <Link href="/" className="cursor-pointer flex items-center gap-1">
           <Image
@@ -137,7 +137,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
             height={34}
             alt="Defiance Finance logo"
           />
-          <h1 className="text-26 font-ibm-plex-serif font-bold text-green-700">
+          <h1 className="text-26 font-ibm-plex-serif font-bold text-white drop-shadow-md">
             Defiance Finance
           </h1>
         </Link>
@@ -145,16 +145,16 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
         <div className="flex flex-col gap-1 md:gap-3">
           <h1 className="text-24 lg:text-36 font-semibold text-white">
             {user
-              ? 'Hesabı Bağla'
+              ? 'Link Account'
               : type === 'sign-in'
-              ? 'Giriş Yap'
-              : 'Kayıt Ol'}
+              ? 'Sign In'
+              : 'Sign Up'}
           </h1>
 
-          <p className="text-16 font-normal text-gray-300">
+          <p className="text-16 font-normal text-white/80">
             {user
-              ? 'Başlamak için hesabınızı bağlayın'
-              : 'Lütfen bilgilerinizi giriniz'}
+              ? 'Link your account to get started'
+              : 'Please enter your details'}
           </p>
         </div>
       </header>
@@ -162,8 +162,8 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
       {showMfa ? (
         <form onSubmit={handleMfaSubmit} className="space-y-6">
           <div className="flex flex-col gap-2">
-             <h2 className="text-18 font-semibold text-white">İki Faktörlü Doğrulama</h2>
-             <p className="text-14 text-gray-300">Lütfen Authenticator uygulamanızdaki 6 haneli kodu girin.</p>
+             <h2 className="text-18 font-semibold text-white">Two-Factor Authentication</h2>
+             <p className="text-14 text-gray-300">Please enter the 6-digit code from your Authenticator app.</p>
           </div>
           
           <input
@@ -171,12 +171,12 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
             maxLength={6}
             value={mfaCode}
             onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="6 Haneli Kod"
+            placeholder="6-Digit Code"
             className="w-full border border-gray-300 rounded-lg p-3 text-center text-20 tracking-widest focus:ring-2 focus:ring-green-600 focus:outline-none text-black"
           />
           
-          <Button type="submit" disabled={isLoading || mfaCode.length !== 6} className="bg-green-600 hover:bg-green-700 w-full">
-            {isLoading ? "Doğrulanıyor..." : "Kodu Onayla"}
+          <Button type="submit" disabled={isLoading || mfaCode.length !== 6} className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all hover:scale-[1.02] duration-300 w-full rounded-xl py-6 text-lg">
+            {isLoading ? "Verifying..." : "Verify Code"}
           </Button>
           
           {formError && <p className="text-sm text-red-600">{formError}</p>}
@@ -188,23 +188,23 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit, () => {
-              setFormError('Lütfen formdaki hataları düzeltin.');
+              setFormError('Please correct the errors in the form.');
             })}
-            className="space-y-8"
+            className="space-y-6 [&_input]:bg-white/5 [&_input]:border-white/20 [&_input]:text-white [&_input]:placeholder:text-white/50 [&_label]:text-white/90 [&_input]:backdrop-blur-sm [&_input]:focus:border-purple-400 [&_input]:transition-all"
           >
             {type === 'sign-up' && (
               <div className="flex gap-4">
                 <CustomInput
                   control={form.control}
                   name="firstName"
-                  label="Ad"
-                  placeholder="Örn: Dila"
+                  label="First Name"
+                  placeholder="ex: John"
                 />
                 <CustomInput
                   control={form.control}
                   name="lastName"
-                  label="Soyad"
-                  placeholder="Örn: Yılmaz"
+                  label="Last Name"
+                  placeholder="ex: Doe"
                 />
               </div>
             )}
@@ -212,47 +212,47 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
             <CustomInput
               control={form.control}
               name="email"
-              label="E-posta"
-              placeholder="E-postanızı girin"
+              label="Email"
+              placeholder="Enter your email"
             />
 
             <CustomInput
               control={form.control}
               name="password"
-              label="Şifre"
-              placeholder="Şifrenizi girin"
+              label="Password"
+              placeholder="Enter your password"
             />
             {type === 'sign-up' && (
               <>
             <CustomInput
         control={form.control}
         name="address"
-        label="Adres"
-        placeholder="Adresinizi girin"
+        label="Address"
+        placeholder="Enter your specific address"
       />
             <CustomInput
               control={form.control}
               name="state"
-              label="Şehir/Eyalet"
-              placeholder="Örn: Ankara"
+              label="State/City"
+              placeholder="ex: NY"
             />
         <CustomInput
           control={form.control}
           name="ssn"
           label="SSN"
-          placeholder="Örn: 1234"
+          placeholder="ex: 1234"
         />
         <CustomInput
           control={form.control}
           name="dateOfBirth"
-          label="Doğum Tarihi"
-          placeholder="YYYY-AA-GG"
+          label="Date of Birth"
+          placeholder="YYYY-MM-DD"
         />
         <CustomInput
           control={form.control}
           name="postalCode"
-          label="Posta Kodu"
-          placeholder="Örn: 06540"
+          label="Postal Code"
+          placeholder="ex: 11101"
         />
               </>
             )}
@@ -260,7 +260,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
            <Button
   type="submit"
   disabled={isLoading}
-  className="bg-green-600 hover:bg-green-700 w-full"
+  className="w-full rounded-xl py-6 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-semibold shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all hover:scale-[1.02] duration-300"
 >
   {isLoading ? (
     <>
@@ -268,9 +268,9 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
       {" "}Loading...
     </>
   ) : type === 'sign-in' ? (
-    'Giriş Yap'
+    'Sign In'
   ) : (
-    'Kayıt Ol'
+    'Sign Up'
   )}
 </Button>
 
@@ -281,18 +281,18 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
         </Form>
         
       )}
-      <footer className="flex justify-center gap-1">
-  <p className="text-14 font-normal text-gray-300">
+      <footer className="flex justify-center gap-1 mt-4">
+  <p className="text-14 font-normal text-white/80">
     {type === 'sign-in'
-      ? "Hesabın yok mu?"
-      : "Zaten hesabın var mı?"}
+      ? "Don't have an account?"
+      : "Already have an account?"}
   </p>
 
   <Link
     href={type === 'sign-in' ? '/sign-up' : '/sign-in'}
-    className="form-link"
+    className="form-link text-white font-bold hover:text-purple-300 transition-colors"
   >
-    {type === 'sign-in' ? 'Kayıt Ol' : 'Giriş Yap'}
+    {type === 'sign-in' ? 'Sign Up' : 'Sign In'}
   </Link>
 </footer>
     </section>
