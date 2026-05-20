@@ -150,7 +150,11 @@ const DetailRow = ({
   </div>
 );
 
-const TransactionsTable = ({ transactions = [] }: TransactionTableProps) => {
+const TransactionsTable = ({
+  transactions = [],
+  showAccount = false,
+  emptyMessage = "No transactions found for this account yet.",
+}: TransactionTableProps) => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(
     null
   );
@@ -190,7 +194,7 @@ const TransactionsTable = ({ transactions = [] }: TransactionTableProps) => {
   if (!transactions.length) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white px-4 py-8 text-center text-14 text-gray-600">
-        No transactions found for this account yet.
+        {emptyMessage}
       </div>
     );
   }
@@ -198,10 +202,13 @@ const TransactionsTable = ({ transactions = [] }: TransactionTableProps) => {
   return (
     <>
       <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="w-full min-w-[760px] border-collapse">
+        <table className="w-full min-w-[820px] border-collapse">
           <thead className="bg-[#F9FAFB]">
             <tr className="text-left text-12 font-semibold uppercase text-gray-600">
               <th className="px-4 py-3">Transaction</th>
+              {showAccount ? (
+                <th className="px-4 py-3 max-lg:hidden">Account</th>
+              ) : null}
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Date</th>
@@ -239,6 +246,17 @@ const TransactionsTable = ({ transactions = [] }: TransactionTableProps) => {
                       View details
                     </p>
                   </td>
+
+                  {showAccount ? (
+                    <td className="max-w-[180px] px-4 py-4 pr-10 text-14 text-gray-600 max-lg:hidden">
+                      <p className="truncate font-semibold text-gray-700">
+                        {transaction.accountName || "Bank account"}
+                      </p>
+                      <p className="truncate text-12 text-gray-500">
+                        {transaction.accountId || "Account"}
+                      </p>
+                    </td>
+                  ) : null}
 
                   <td
                     className={cn("px-4 py-4 pr-10 text-14 font-semibold", {

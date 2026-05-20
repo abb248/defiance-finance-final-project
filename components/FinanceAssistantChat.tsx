@@ -12,6 +12,7 @@ import {
   savePlannerStateToStorage,
   type StoredBudget,
   type StoredSavingsGoal,
+  type StoredSubscription,
 } from "@/lib/budget-utils";
 import { cn, formatAmount } from "@/lib/utilsz";
 import {
@@ -46,7 +47,11 @@ const demoQuestionGroups = [
   },
   {
     label: "Planning",
-    questions: ["How are my budgets doing?", "How close am I to my savings goals?"],
+    questions: [
+      "How are my budgets doing?",
+      "How close am I to my savings goals?",
+      "Which bills are coming soon?",
+    ],
   },
   {
     label: "Accounts",
@@ -65,6 +70,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   const [isLoading, setIsLoading] = useState(false);
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
+  const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
   const [isPlannerLoaded, setIsPlannerLoaded] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState(
     overview.topCategories[0]?.name || "Food and Drink"
@@ -87,8 +93,8 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   ]);
 
   const plannerPreferences = useMemo(
-    () => ({ budgets, savingsGoals }),
-    [budgets, savingsGoals]
+    () => ({ budgets, savingsGoals, subscriptions }),
+    [budgets, savingsGoals, subscriptions]
   );
 
   const budgetAnalyses = useMemo(
@@ -105,14 +111,15 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
     const planner = getPlannerStateFromStorage();
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
+    setSubscriptions(planner.subscriptions);
     setIsPlannerLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!isPlannerLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals });
-  }, [budgets, isPlannerLoaded, savingsGoals]);
+    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions });
+  }, [budgets, isPlannerLoaded, savingsGoals, subscriptions]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

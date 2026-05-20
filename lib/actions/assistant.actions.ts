@@ -45,9 +45,21 @@ export type AssistantSavingsGoal = {
   targetDate?: string;
 };
 
+export type AssistantSubscription = {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  dueDate: string;
+  frequency: "weekly" | "monthly" | "yearly";
+  accountName?: string;
+  isPaid?: boolean;
+};
+
 export type AssistantPreferences = {
   budgets?: AssistantBudget[];
   savingsGoals?: AssistantSavingsGoal[];
+  subscriptions?: AssistantSubscription[];
 };
 
 export type AssistantBudgetAnalysis = {
@@ -70,6 +82,12 @@ export type AssistantSavingsGoalAnalysis = {
   targetDate?: string;
 };
 
+export type AssistantSubscriptionAnalysis = AssistantSubscription & {
+  daysUntilDue: number;
+  monthlyAmount: number;
+  status: "paid" | "due-soon" | "overdue" | "scheduled";
+};
+
 export type FinanceAssistantOverview = {
   userName: string;
   accountCount: number;
@@ -85,6 +103,7 @@ export type FinanceAssistantOverview = {
   largestExpense: AssistantTransactionSummary | null;
   budgetAnalyses: AssistantBudgetAnalysis[];
   savingsGoalAnalyses: AssistantSavingsGoalAnalysis[];
+  subscriptionAnalyses: AssistantSubscriptionAnalysis[];
   quickInsights: string[];
   suggestedQuestions: string[];
 };
@@ -146,6 +165,7 @@ const buildAssistantContext = (overview: FinanceAssistantOverview) => ({
   topCategories: overview.topCategories,
   budgets: overview.budgetAnalyses,
   savingsGoals: overview.savingsGoalAnalyses,
+  subscriptions: overview.subscriptionAnalyses,
   recentTransactions: overview.recentTransactions.map((transaction) => ({
     name: transaction.name,
     accountName: transaction.accountName,
@@ -354,8 +374,46 @@ const buildOverview = (
     })
     .sort((a, b) => b.percentage - a.percentage);
 
+  const subscriptionAnalyses = (preferences.subscriptions || [])
+    .filter((subscription) => subscription.name && Number(subscription.amount) > 0)
+    .map((subscription) => {
+      const amount = Number(subscription.amount) || 0;
+      const dueDate = new Date(subscription.dueDate || 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+      const daysUntilDue = Number.isNaN(dueDate.getTime())
+        ? 9999
+        : Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000);
+      const monthlyAmount =
+        subscription.frequency === "weekly"
+          ? amount * 4.33
+          : subscription.frequency === "yearly"
+          ? amount / 12
+          : amount;
+      const status = subscription.isPaid
+        ? "paid"
+        : daysUntilDue < 0
+        ? "overdue"
+        : daysUntilDue <= 7
+        ? "due-soon"
+        : "scheduled";
+
+      return {
+        ...subscription,
+        amount,
+        daysUntilDue,
+        monthlyAmount,
+        status,
+      } satisfies AssistantSubscriptionAnalysis;
+    })
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+
   const topBudgetRisk = budgetAnalyses[0] || null;
   const topSavingsGoal = savingsGoalAnalyses[0] || null;
+  const upcomingSubscription =
+    subscriptionAnalyses.find((subscription) => subscription.status !== "paid") ||
+    subscriptionAnalyses[0];
 
   const quickInsights = [
     topCategory
@@ -375,6 +433,9 @@ const buildOverview = (
     topSavingsGoal
       ? `${topSavingsGoal.name} goal is ${topSavingsGoal.percentage}% complete.`
       : "No savings goal has been added yet.",
+    upcomingSubscription
+      ? `${upcomingSubscription.name} is due in ${upcomingSubscription.daysUntilDue} days.`
+      : "No recurring bill has been added yet.",
   ];
 
   return {
@@ -397,6 +458,7 @@ const buildOverview = (
     largestExpense,
     budgetAnalyses,
     savingsGoalAnalyses,
+    subscriptionAnalyses,
     quickInsights,
     suggestedQuestions: [
       "What did I spend the most on this month?",
@@ -405,6 +467,7 @@ const buildOverview = (
       "Will my spending be high this month?",
       "How are my budgets doing?",
       "How close am I to my savings goals?",
+      "Which bills are coming soon?",
     ],
   };
 };
@@ -553,6 +616,45 @@ export const askFinanceAssistant = async (
         )} so far this month. Projected month-end spending is about ${formatAmount(
           overview.projectedMonthSpending
         )}. No category budget has been added yet.`;
+  } else if (
+    includesAny(normalizedQuestion, [
+      "bill",
+      "bills",
+      "subscription",
+      "subscriptions",
+      "recurring",
+      "due",
+      "fatura",
+      "abonelik",
+    ])
+  ) {
+    const upcomingBills = overview.subscriptionAnalyses
+      .filter((subscription) => subscription.status !== "paid")
+      .slice(0, 4);
+    const monthlyFixedCost = overview.subscriptionAnalyses.reduce(
+      (sum, subscription) => sum + subscription.monthlyAmount,
+      0
+    );
+    const billsText = upcomingBills
+      .map(
+        (subscription) =>
+          `${subscription.name}: ${formatAmount(
+            subscription.amount
+          )}, due in ${subscription.daysUntilDue} days`
+      )
+      .join("; ");
+
+    answer = overview.subscriptionAnalyses.length
+      ? isTurkish
+        ? `Yaklasan faturalarin: ${billsText || "odenmemis fatura yok"}. Aylik sabit gider tahmini ${formatAmount(
+            monthlyFixedCost
+          )}.`
+        : `Upcoming bills: ${billsText || "no unpaid bills right now"}. Estimated monthly fixed cost is ${formatAmount(
+            monthlyFixedCost
+          )}.`
+      : isTurkish
+      ? "Henuz kayitli fatura veya abonelik yok."
+      : "No recurring bills or subscriptions have been added yet.";
   } else if (
     includesAny(normalizedQuestion, [
       "most",

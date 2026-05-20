@@ -30,6 +30,11 @@ export const sidebarLinks = [
     label: "Alerts",
   },
   {
+    imgURL: "/icons/subscriptions.svg",
+    route: "/subscriptions",
+    label: "Subscriptions",
+  },
+  {
     imgURL: "/icons/budget.svg",
     route: "/budgets",
     label: "Budgets",

@@ -37,6 +37,7 @@ declare type Bank = Account;
 declare type Transaction = {
   id: string;
   accountId?: string;
+  accountName?: string;
   name: string;
   amount: number;
   signedAmount?: number;
@@ -96,6 +97,8 @@ declare type BankInfoProps = {
 
 declare type TransactionTableProps = {
   transactions?: Transaction[];
+  showAccount?: boolean;
+  emptyMessage?: string;
 };
 
 declare type CategoryBadgeProps = {
@@ -112,11 +115,14 @@ declare type TransactionFilterQuery = {
   id?: string;
   search?: string;
   category?: string;
+  status?: string;
+  channel?: string;
   type?: string;
   from?: string;
   to?: string;
   min?: string;
   max?: string;
+  sort?: string;
 };
 
 declare type CategoryCount = {

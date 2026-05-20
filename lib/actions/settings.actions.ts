@@ -44,7 +44,7 @@ export const updateDefaultReceivingAccount = async (accountId: string) => {
         .eq(key, user.id);
 
       if (!error) {
-        return { success: true, error: null as const };
+        return { success: true, error: null };
       }
 
       if (isMissingColumnError(error)) {
