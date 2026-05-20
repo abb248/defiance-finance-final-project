@@ -129,7 +129,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
 
 
 // 2. GİRİŞ YAP
-export const signIn = async ({ email, password }: signInProps): Promise<ActionResult<any>> => {
+export const signIn = async ({ email, password }: signInProps): Promise<ActionResult<any> & { requiresMfa?: boolean, factorId?: string }> => {
   try {
     const supabase = await createSessionClient();
 
@@ -139,6 +139,17 @@ export const signIn = async ({ email, password }: signInProps): Promise<ActionRe
     });
 
     if (error) throw error;
+
+    // Check if MFA is required
+    const mfaData = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (mfaData.data?.nextLevel === 'aal2' && mfaData.data?.currentLevel === 'aal1') {
+      const factors = await supabase.auth.mfa.listFactors();
+      const totpFactor = factors.data?.totp?.[0];
+
+      if (totpFactor) {
+        return { user: null, error: null, requiresMfa: true, factorId: totpFactor.id };
+      }
+    }
 
     return { user: JSON.parse(JSON.stringify(data.user)), error: null };
   } catch (error: any) {
@@ -204,3 +215,70 @@ export const logoutAccount = async () => {
     return null;
   }
 }
+
+export const enroll2FA = async () => {
+  try {
+    const supabase = await createSessionClient();
+
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      issuer: 'SpendWise',
+    });
+
+    if (error) throw error;
+    
+    return JSON.parse(JSON.stringify(data)); 
+  } catch (error) {
+    console.error("2FA Kayıt Hatası:", error);
+    return null;
+  }
+};
+
+export const challenge2FA = async (factorId: string) => {
+  try {
+    const supabase = await createSessionClient();
+    
+    const { data, error } = await supabase.auth.mfa.challenge({ factorId });
+    
+    if (error) throw error;
+    
+    return JSON.parse(JSON.stringify(data));
+  } catch (error) {
+    console.error("2FA Challenge Hatası:", error);
+    return null;
+  }
+};
+
+export const verify2FA = async (factorId: string, challengeId: string, code: string) => {
+  try {
+    const supabase = await createSessionClient();
+
+    const { data, error } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId,
+      code,
+    });
+
+    if (error) throw error;
+    
+    return JSON.parse(JSON.stringify(data));
+  } catch (error) {
+    console.error("2FA Doğrulama Hatası:", error);
+    return null;
+  }
+};
+
+export const getMfaStatus = async () => {
+  try {
+    const supabase = await createSessionClient();
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    
+    if (error) throw error;
+    
+    // nextLevel 'aal2' ise kullanıcının halihazırda onaylanmış bir 2FA faktörü var demektir.
+    return data.nextLevel === 'aal2';
+  } catch (error) {
+    console.error("MFA durumu alınamadı:", error);
+    return false;
+  }
+};

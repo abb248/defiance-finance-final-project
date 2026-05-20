@@ -3,9 +3,11 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { sidebarLinks } from '@/constants'
 import { cn } from '@/lib/utilsz'
+import { logoutAccount } from '@/lib/actions/user.actions'
+import { LogOut } from 'lucide-react'
 
 type SidebarProps = {
   user: {
@@ -17,6 +19,12 @@ type SidebarProps = {
 
 const Sidebar = ({ user }: SidebarProps) => {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logoutAccount()
+    router.push('/sign-in')
+  }
 
   const firstInitial = (user?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || 'U').toUpperCase()
   const fullName =
@@ -77,13 +85,17 @@ const Sidebar = ({ user }: SidebarProps) => {
           <p className="text-xl font-bold text-gray-700">{firstInitial}</p>
         </div>
 
-        <div className="footer_email">
+        <div className="footer_email flex-1">
           <h1 className="text-14 truncate font-semibold text-gray-700">
             {fullName}
           </h1>
           <p className="text-14 truncate font-normal text-gray-600">
             {user.email}
           </p>
+        </div>
+
+        <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors" onClick={handleLogout}>
+          <LogOut size={20} className="text-gray-600" />
         </div>
       </footer>
     </section>

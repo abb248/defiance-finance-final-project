@@ -5,7 +5,6 @@ import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { formatAmount } from "@/lib/utilsz";
 import { Building2, CreditCard, Wallet } from "lucide-react";
 import { redirect } from "next/navigation";
-
 const MyBanks = async () => {
   const loggedIn = await getLoggedInUser();
   if (!loggedIn) redirect("/sign-in");

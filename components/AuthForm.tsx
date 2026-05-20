@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn, signUp } from '@/lib/actions/user.actions';
+import { signIn, signUp, challenge2FA, verify2FA } from '@/lib/actions/user.actions';
 
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,12 @@ const AuthForm = ({ type }: { type: 'sign-in' | 'sign-up' }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  
+  // 2FA state
+  const [showMfa, setShowMfa] = useState(false);
+  const [factorId, setFactorId] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+
   const formSchema = authFormSchema(type);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -77,6 +83,9 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
       // 2. Başarılı giriş olursa ana sayfaya yönlendiriyoruz
       if (result?.error) {
         setFormError(result.error);
+      } else if (result?.requiresMfa && result?.factorId) {
+        setShowMfa(true);
+        setFactorId(result.factorId);
       } else if (result?.user) {
         router.push('/');
       } else {
@@ -86,6 +95,32 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
   } catch (error) {
     console.log("Form gönderilirken hata:", error);
     setFormError('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const handleMfaSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (mfaCode.length !== 6) {
+    setFormError('Lütfen 6 haneli kodu eksiksiz girin.');
+    return;
+  }
+  
+  setIsLoading(true);
+  setFormError(null);
+  try {
+    const challenge = await challenge2FA(factorId);
+    if (!challenge?.id) throw new Error("Doğrulama başlatılamadı.");
+    
+    const verify = await verify2FA(factorId, challenge.id, mfaCode);
+    if (verify) {
+      router.push('/');
+    } else {
+      setFormError("Geçersiz kod! Lütfen uygulamanızdaki güncel kodu girin.");
+    }
+  } catch (err) {
+    setFormError("Doğrulama başarısız oldu.");
   } finally {
     setIsLoading(false);
   }
@@ -124,7 +159,29 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
         </div>
       </header>
 
-      {user ? (
+      {showMfa ? (
+        <form onSubmit={handleMfaSubmit} className="space-y-6">
+          <div className="flex flex-col gap-2">
+             <h2 className="text-18 font-semibold text-white">İki Faktörlü Doğrulama</h2>
+             <p className="text-14 text-gray-300">Lütfen Authenticator uygulamanızdaki 6 haneli kodu girin.</p>
+          </div>
+          
+          <input
+            type="text"
+            maxLength={6}
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+            placeholder="6 Haneli Kod"
+            className="w-full border border-gray-300 rounded-lg p-3 text-center text-20 tracking-widest focus:ring-2 focus:ring-green-600 focus:outline-none text-black"
+          />
+          
+          <Button type="submit" disabled={isLoading || mfaCode.length !== 6} className="bg-green-600 hover:bg-green-700 w-full">
+            {isLoading ? "Doğrulanıyor..." : "Kodu Onayla"}
+          </Button>
+          
+          {formError && <p className="text-sm text-red-600">{formError}</p>}
+        </form>
+      ) : user ? (
         <div className="flex flex-col gap-4">
         </div>
       ) : (

@@ -6,6 +6,7 @@ import { getAccount, getAccounts } from '@/lib/actions/bank.actions';
 import { getLoggedInUser } from '@/lib/actions/user.actions';
 import { sortAccountsByRecentTransactions } from '@/lib/utilsz';
 import { redirect } from "next/navigation";
+import TwoFactorAuth from '@/components/TwoFactorAuth';
 
 const RECENT_TRANSACTIONS_LIMIT = 5;
 
@@ -79,6 +80,12 @@ const Home = async ({ searchParams: { id } }: SearchParamProps) => {
           />
         </header>
 
+        
+        <div className="mt-8 mb-8 w-full">
+          <TwoFactorAuth />
+        </div>
+        
+
         <RecentTransactions
           accounts={accountsData}
           featuredAccounts={featuredAccounts}
@@ -96,4 +103,4 @@ const Home = async ({ searchParams: { id } }: SearchParamProps) => {
   )
 }
 
-export default Home
+export default Home;
