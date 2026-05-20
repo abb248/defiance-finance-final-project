@@ -85,7 +85,7 @@ const Sidebar = ({ user }: SidebarProps) => {
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="footer_name flex-shrink-0">
-              <p className="text-xl font-bold text-gray-700">{firstInitial}</p>
+              <p className="text-xl font-bold text-white">{firstInitial}</p>
             </div>
 
             <div className="footer_email flex-1 min-w-0">

@@ -5,8 +5,8 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
+  CircleDollarSign,
   Edit3,
-  PiggyBank,
   Plus,
   Target,
   Trash2,
@@ -24,7 +24,7 @@ import {
   type StoredSavingsGoal,
   type StoredSubscription,
 } from "@/lib/budget-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type GoalsCenterProps = {
   accounts: Account[];
@@ -172,7 +172,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
       )
     );
     setContributions((current) => ({ ...current, [goal.id]: "" }));
-    setNotice(`$<FormattedAmount amount={contribution} /> was added to ${goal.name}.`);
+    setNotice(`Contribution was added to ${goal.name}.`);
   };
 
   return (
@@ -190,7 +190,7 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <p className="text-12 font-semibold uppercase text-gray-500">Saved</p>
-            <PiggyBank size={18} className="text-success-700" />
+            <CircleDollarSign size={18} className="text-success-700" />
           </div>
           <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalSaved} /></p>
           <p className="mt-1 text-13 text-gray-600">{overallPercentage}% of all goals</p>
@@ -380,13 +380,21 @@ const GoalsCenter = ({ accounts, totalCurrentBalance }: GoalsCenterProps) => {
                       <div className="rounded-lg bg-gray-25 p-3">
                         <p className="text-12 text-gray-600">Weekly need</p>
                         <p className="mt-1 text-14 font-bold text-gray-900">
-                          {goal.weeklyNeeded ? formatAmount(goal.weeklyNeeded) : "No date"}
+                          {goal.weeklyNeeded ? (
+                            <FormattedAmount amount={goal.weeklyNeeded} />
+                          ) : (
+                            "No date"
+                          )}
                         </p>
                       </div>
                       <div className="rounded-lg bg-gray-25 p-3">
                         <p className="text-12 text-gray-600">Monthly need</p>
                         <p className="mt-1 text-14 font-bold text-gray-900">
-                          {goal.monthlyNeeded ? formatAmount(goal.monthlyNeeded) : "No date"}
+                          {goal.monthlyNeeded ? (
+                            <FormattedAmount amount={goal.monthlyNeeded} />
+                          ) : (
+                            "No date"
+                          )}
                         </p>
                       </div>
                       <div className="rounded-lg bg-gray-25 p-3">

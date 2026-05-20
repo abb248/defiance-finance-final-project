@@ -1,6 +1,7 @@
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import HeaderBox from "@/components/HeaderBox";
 import SettingsDashboard from "@/components/SettingsDashboard";
+import TwoFactorAuth from "@/components/TwoFactorAuth";
 import { getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { redirect } from "next/navigation";
@@ -23,20 +24,20 @@ const SettingsPage = async () => {
     <section className="payment-transfer">
       <HeaderBox
         title="Settings"
-        subtext="Manage your profile, transfer defaults, and app preferences."
+        subtext="Manage display preferences, assistant context, and privacy controls."
       />
 
       <section className="w-full pt-5">
         <SettingsDashboard
           user={loggedIn}
           accounts={accountsData}
-          totalCurrentBalance={Number(accounts?.totalCurrentBalance) || 0}
           currentDefaultId={currentDefaultId}
         />
       </section>
 
-      <section className="w-full pb-5">
+      <section className="grid w-full gap-6 pb-5 xl:grid-cols-2">
         <ChangePasswordForm />
+        <TwoFactorAuth />
       </section>
     </section>
   );

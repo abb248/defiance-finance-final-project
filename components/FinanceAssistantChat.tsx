@@ -17,6 +17,7 @@ import {
 } from "@/lib/budget-utils";
 import { cn } from "@/lib/utilsz";
 import {
+  Bot,
   Loader2,
   Plus,
   RotateCcw,
@@ -247,7 +248,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
         <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex-center size-11 rounded-full bg-blue-50 text-blue-600">
-              <Sparkles size={20} />
+              <Bot size={20} />
             </div>
             <div>
               <h2 className="text-18 font-semibold text-gray-900">Finance Assistant</h2>
@@ -256,10 +257,10 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <div
-              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-12 font-semibold ${
+              className={`assistant-mode-badge flex items-center gap-2 rounded-full px-3 py-1.5 text-12 font-semibold ${
                 overview.answerMode === "gemini"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-gray-100 text-gray-600"
+                  ? "assistant-mode-badge-active bg-emerald-50 text-emerald-700"
+                  : "assistant-mode-badge-muted bg-gray-100 text-gray-600"
               }`}
             >
               <Sparkles size={14} />

@@ -4,8 +4,8 @@ import { FormattedAmount } from '@/components/FormattedAmount';
 import {
   AlertTriangle,
   CheckCircle2,
+  CircleDollarSign,
   Edit3,
-  PiggyBank,
   Plus,
   Target,
   Trash2,
@@ -26,7 +26,7 @@ import {
   type StoredSavingsGoal,
   type StoredSubscription,
 } from "@/lib/budget-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type BudgetManagementProps = {
   accounts: Account[];
@@ -205,7 +205,7 @@ const BudgetManagement = ({
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <p className="text-12 font-semibold uppercase text-gray-500">Used this month</p>
-            <PiggyBank size={18} className="text-emerald-600" />
+            <CircleDollarSign size={18} className="text-emerald-600" />
           </div>
           <p className="mt-3 text-24 font-bold text-gray-900"><FormattedAmount amount={totalSpent} /></p>
           <p className="mt-1 text-13 text-gray-600">{usedPercentage}% of planned budget</p>
@@ -394,7 +394,7 @@ const BudgetManagement = ({
                           </span>
                         </div>
                         <p className="mt-1 text-13 text-gray-600">
-                          {formatAmount(Math.max(0, budget.remaining))} left from{" "}
+                          <FormattedAmount amount={Math.max(0, budget.remaining)} /> left from{" "}
                           <FormattedAmount amount={budget.monthlyLimit} />
                         </p>
                       </div>
@@ -443,18 +443,22 @@ const BudgetManagement = ({
                           <AlertTriangle size={16} className="mt-0.5 text-amber-600" />
                         )}
                         <p className="text-13 text-gray-600">
-                          {budget.status === "over"
-                            ? `This category is over by ${formatAmount(
-                                Math.abs(budget.remaining)
-                              )}.`
-                            : budget.status === "watch"
-                            ? "This category is close to the limit."
-                            : "This category is under control for now."}{" "}
-                          {budget.suggestedLimit > budget.monthlyLimit
-                            ? `A safer limit could be $<FormattedAmount amount={
-                                budget.suggestedLimit
-                              } />.`
-                            : ""}
+                          {budget.status === "over" ? (
+                            <>
+                              This category is over by{" "}
+                              <FormattedAmount amount={Math.abs(budget.remaining)} />.
+                            </>
+                          ) : budget.status === "watch" ? (
+                            "This category is close to the limit."
+                          ) : (
+                            "This category is under control for now."
+                          )}{" "}
+                          {budget.suggestedLimit > budget.monthlyLimit ? (
+                            <>
+                              A safer limit could be{" "}
+                              <FormattedAmount amount={budget.suggestedLimit} />.
+                            </>
+                          ) : null}
                         </p>
                       </div>
                     </div>

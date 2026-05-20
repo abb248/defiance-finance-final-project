@@ -1,19 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { setPreferredCurrency, getPreferredCurrency } from '@/lib/actions/currency.actions';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { getPreferredCurrency, setPreferredCurrency } from "@/lib/actions/currency.actions";
+import { CURRENCY_CHANGED_EVENT } from "@/hooks/useCurrency";
 
 const currencies = [
-  { code: 'USD', symbol: '$', label: 'US Dollar' },
-  { code: 'TRY', symbol: '₺', label: 'Turkish Lira' },
-  { code: 'EUR', symbol: '€', label: 'Euro' },
-  { code: 'GBP', symbol: '£', label: 'British Pound' },
-  { code: 'CAD', symbol: '$', label: 'Canadian Dollar' },
+  { code: "USD", label: "US Dollar" },
+  { code: "TRY", label: "Turkish Lira" },
+  { code: "EUR", label: "Euro" },
+  { code: "GBP", label: "British Pound" },
+  { code: "CAD", label: "Canadian Dollar" },
 ];
 
 const CurrencySelector = () => {
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const router = useRouter();
 
   useEffect(() => {
@@ -21,26 +23,40 @@ const CurrencySelector = () => {
       const currency = await getPreferredCurrency();
       setSelectedCurrency(currency);
     };
+
     fetchCurrency();
+
+    const handleCurrencyChange = (event: Event) => {
+      const nextCurrency = (event as CustomEvent<string>).detail;
+      if (nextCurrency) setSelectedCurrency(nextCurrency);
+    };
+
+    window.addEventListener(CURRENCY_CHANGED_EVENT, handleCurrencyChange);
+    return () => {
+      window.removeEventListener(CURRENCY_CHANGED_EVENT, handleCurrencyChange);
+    };
   }, []);
 
-  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCurrency = e.target.value;
+  const handleChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = event.target.value;
     setSelectedCurrency(newCurrency);
+    window.dispatchEvent(
+      new CustomEvent(CURRENCY_CHANGED_EVENT, { detail: newCurrency })
+    );
     await setPreferredCurrency(newCurrency);
     router.refresh();
   };
 
   return (
-    <div className="flex items-center mt-2 w-full">
+    <div className="flex w-full items-center">
       <select
         value={selectedCurrency}
         onChange={handleChange}
-        className="text-14 bg-gray-100 border border-gray-300 text-gray-700 rounded-md py-1.5 px-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+        className="w-full cursor-pointer rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-14 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        {currencies.map((curr) => (
-          <option key={curr.code} value={curr.code}>
-            {curr.code} - {curr.label}
+        {currencies.map((currency) => (
+          <option key={currency.code} value={currency.code}>
+            {currency.code} - {currency.label}
           </option>
         ))}
       </select>

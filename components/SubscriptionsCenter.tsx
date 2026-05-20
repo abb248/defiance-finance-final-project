@@ -25,7 +25,7 @@ import {
   type StoredSubscription,
   type SubscriptionAnalysis,
 } from "@/lib/budget-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type SubscriptionsCenterProps = {
   accounts: Account[];

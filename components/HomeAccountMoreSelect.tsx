@@ -5,7 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type HomeAccountMoreSelectProps = {
   accounts: Account[];
@@ -91,13 +91,7 @@ const HomeAccountMoreSelect = ({
                   )}
                 >
                   <div
-                    className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-full text-12 font-bold",
-                      {
-                        "bg-blue-600 text-white": isActive,
-                        "bg-gray-200 text-gray-700": !isActive,
-                      }
-                    )}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-12 font-bold text-white"
                   >
                     {accountTitle.slice(0, 2).toUpperCase()}
                   </div>

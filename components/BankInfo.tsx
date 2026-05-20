@@ -1,5 +1,4 @@
 import { FormattedAmount } from '@/components/FormattedAmount';
-import { formatAmount } from "@/lib/utilsz";
 
 const BankInfo = ({ account }: BankInfoProps) => {
   const title = account.name || account.bankName || "Bank account";

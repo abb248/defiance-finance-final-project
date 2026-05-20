@@ -2,6 +2,7 @@
 
 import { createAdminClient, createSessionClient } from "@/lib/supabase/server";
 import { createStripeCustomer } from "./stripe.actions";
+import { revalidatePath } from "next/cache";
 
 // --- TİP TANIMLAMALARI (Hataları önlemek için) ---
 interface SignUpParams {
@@ -296,5 +297,161 @@ export const updateUserPassword = async (newPassword: string) => {
   } catch (error: any) {
     console.error("Password update error:", error);
     return { success: false, error: error.message || "Password could not be updated." };
+  }
+};
+
+export const updateUserProfileName = async ({
+  firstName,
+  lastName,
+}: {
+  firstName: string;
+  lastName: string;
+}) => {
+  const cleanFirstName = firstName.trim();
+  const cleanLastName = lastName.trim();
+
+  if (!cleanFirstName || !cleanLastName) {
+    return { success: false, error: "First name and last name are required." };
+  }
+
+  try {
+    const supabase = await createSessionClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) throw userError;
+    if (!user) return { success: false, error: "Please sign in again." };
+
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        fullName: `${cleanFirstName} ${cleanLastName}`,
+      },
+    });
+
+    if (authError) throw authError;
+
+    const admin = await createAdminClient();
+    const updates = { firstName: cleanFirstName, lastName: cleanLastName };
+    const candidateKeys = ["userID", "userId", "user_id", "auth_user_id"] as const;
+    let updated = false;
+    let lastError: any = null;
+
+    for (const key of candidateKeys) {
+      const { data, error } = await admin
+        .from("users")
+        .update(updates)
+        .eq(key, user.id)
+        .select()
+        .limit(1);
+
+      const msg = String(error?.message || "");
+      const code = String((error as any)?.code || "");
+      const isMissingColumn =
+        code === "42703" || msg.includes("does not exist") || msg.includes("Could not find");
+
+      if (error && isMissingColumn) continue;
+      if (error) {
+        lastError = error;
+        continue;
+      }
+      if (data?.length) {
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      const { data, error } = await admin
+        .from("users")
+        .update(updates)
+        .eq("email", user.email)
+        .select()
+        .limit(1);
+
+      if (error) lastError = error;
+      updated = Boolean(data?.length);
+    }
+
+    if (lastError && !updated) throw lastError;
+
+    revalidatePath("/");
+    revalidatePath("/settings");
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Profile update error:", error);
+    return {
+      success: false,
+      error: error?.message || "Profile name could not be updated.",
+    };
+  }
+};
+
+export const updateUserEmailAddress = async (newEmail: string) => {
+  const cleanEmail = newEmail.trim().toLowerCase();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(cleanEmail)) {
+    return { success: false, error: "Please enter a valid email address." };
+  }
+
+  try {
+    const supabase = await createSessionClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) throw userError;
+    if (!user) return { success: false, error: "Please sign in again." };
+
+    if (user.email?.toLowerCase() === cleanEmail) {
+      return { success: true, error: null, message: "This email is already active." };
+    }
+
+    const { data, error } = await supabase.auth.updateUser({ email: cleanEmail });
+    if (error) throw error;
+
+    const emailChangedNow = data.user?.email?.toLowerCase() === cleanEmail;
+
+    if (emailChangedNow) {
+      const admin = await createAdminClient();
+      const candidateKeys = ["userID", "userId", "user_id", "auth_user_id"] as const;
+
+      for (const key of candidateKeys) {
+        const { error: updateError } = await admin
+          .from("users")
+          .update({ email: cleanEmail })
+          .eq(key, user.id);
+
+        const msg = String(updateError?.message || "");
+        const code = String((updateError as any)?.code || "");
+        const isMissingColumn =
+          code === "42703" || msg.includes("does not exist") || msg.includes("Could not find");
+
+        if (updateError && isMissingColumn) continue;
+        if (!updateError) break;
+      }
+
+      revalidatePath("/");
+      revalidatePath("/settings");
+      return { success: true, error: null, message: "Email address updated." };
+    }
+
+    return {
+      success: true,
+      error: null,
+      message: "Verification email sent. Please confirm it before the new email becomes active.",
+    };
+  } catch (error: any) {
+    console.error("Email update error:", error);
+    return {
+      success: false,
+      error: error?.message || "Email address could not be updated.",
+    };
   }
 };

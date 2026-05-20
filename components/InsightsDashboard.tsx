@@ -28,7 +28,7 @@ import {
   type HealthScoreFactor,
 } from "@/lib/insight-utils";
 import type { FinancialReport } from "@/lib/report-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type InsightsDashboardProps = {
   report: FinancialReport;

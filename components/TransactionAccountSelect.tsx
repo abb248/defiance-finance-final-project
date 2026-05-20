@@ -5,7 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type TransactionAccountSelectProps = {
   accounts: Account[];
@@ -35,9 +35,13 @@ const TransactionAccountSelect = ({
     ? "All accounts"
     : selected?.name || selected?.bankName || "Bank account";
   const shortName = title.slice(0, 2).toUpperCase();
-  const balanceText = isAllSelected
-    ? `${accounts.length} accounts - $<FormattedAmount amount={totalCurrentBalance} />`
-    : formatAmount(selected?.currentBalance || 0);
+  const balanceText = isAllSelected ? (
+    <>
+      {accounts.length} accounts - <FormattedAmount amount={totalCurrentBalance} />
+    </>
+  ) : (
+    <FormattedAmount amount={selected?.currentBalance || 0} />
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -108,13 +112,7 @@ const TransactionAccountSelect = ({
                 )}
               >
                 <div
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-full text-12 font-bold",
-                    {
-                      "bg-blue-600 text-white": isAllSelected,
-                      "bg-gray-200 text-gray-700": !isAllSelected,
-                    }
-                  )}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-12 font-bold text-white"
                 >
                   AL
                 </div>
@@ -151,13 +149,7 @@ const TransactionAccountSelect = ({
                   )}
                 >
                   <div
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-full text-12 font-bold",
-                      {
-                        "bg-blue-600 text-white": isActive,
-                        "bg-gray-200 text-gray-700": !isActive,
-                      }
-                    )}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-12 font-bold text-white"
                   >
                     {accountTitle.slice(0, 2).toUpperCase()}
                   </div>

@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Copy from "@/components/Copy";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { FormattedAmount } from "@/components/FormattedAmount";
+import { cn } from "@/lib/utilsz";
 
 const gradients = [
   "bg-bank-gradient",
@@ -77,7 +78,11 @@ const BankCard = ({
               {showBalance ? "Available balance" : "Balance"}
             </p>
             <p className="font-ibm-plex-serif text-22 font-bold leading-tight text-white md:text-24">
-              {showBalance ? formatAmount(account.currentBalance) : "••••••"}
+              {showBalance ? (
+                <FormattedAmount amount={account.currentBalance} />
+              ) : (
+                "••••••"
+              )}
             </p>
           </div>
 

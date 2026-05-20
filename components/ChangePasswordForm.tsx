@@ -43,8 +43,8 @@ const ChangePasswordForm = () => {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mt-6">
-      <h2 className="text-18 font-semibold text-gray-900 mb-4">Change Password</h2>
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-18 font-semibold text-gray-900">Change Password</h2>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
         <div className="flex flex-col gap-1.5">

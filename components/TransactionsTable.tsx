@@ -234,10 +234,10 @@ const TransactionsTable = ({
                   onKeyDown={(event) => handleRowKeyDown(event, transaction)}
                   title="View transaction details"
                   className={cn(
-                    "cursor-pointer border-b border-gray-200 transition-colors last:border-b-0 hover:bg-blue-25 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500",
+                    "transaction-row cursor-pointer border-b border-gray-200 transition-colors last:border-b-0 hover:bg-blue-25 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500",
                     {
-                      "bg-[#FFFBFA]": isDebit,
-                      "bg-[#F6FEF9]": !isDebit,
+                      "transaction-row-debit bg-[#FFFBFA]": isDebit,
+                      "transaction-row-credit bg-[#F6FEF9]": !isDebit,
                     }
                   )}
                 >

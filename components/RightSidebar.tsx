@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Gauge, Target, WalletCards } from 'lucide-react'
+import { AlertTriangle, Bell, Gauge, Settings as SettingsIcon, Target, WalletCards } from 'lucide-react'
 import Category from '@/components/Category'
 import BankCard from '@/components/ui/BankCard'
 import {
@@ -21,7 +21,7 @@ import {
 } from '@/lib/budget-utils'
 import { buildFinancialAlerts } from '@/lib/alert-utils'
 import { buildFinancialHealthInsight } from '@/lib/insight-utils'
-import { cn, countTransactionCategories, formatAmount } from '@/lib/utilsz'
+import { cn, countTransactionCategories } from '@/lib/utilsz'
 import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/saltedge.actions' // Salt Edge oturum oluşturma fonksiyonunu import ettik
 
 
@@ -156,23 +156,36 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
   }
   return (
     <aside className="right-sidebar">
-      <section className="flex flex-col pb-8">
-        <div className="profile-banner" />
-
-        <div className="profile">
-          <div className="profile-img">
-            <span className="text-5xl font-bold text-blue-500">
-              {firstInitial}
-            </span>
+      <section className="border-b border-gray-200 px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex-center size-14 shrink-0 rounded-full bg-blue-600 text-24 font-bold text-white shadow-sm">
+            {firstInitial}
           </div>
 
-          <div className="profile-details">
-            <h1 className="profile-name">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-20 font-semibold text-gray-900">
               {fullName}
             </h1>
-            <p className="profile-email">
+            <p className="truncate text-14 font-normal text-gray-600">
               {user.email}
             </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/alerts"
+              aria-label="Open alerts"
+              className="flex-center size-10 rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <Bell size={18} />
+            </Link>
+            <Link
+              href="/settings"
+              aria-label="Open settings"
+              className="flex-center size-10 rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <SettingsIcon size={18} />
+            </Link>
           </div>
         </div>
       </section>
@@ -394,7 +407,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
                     {budgetRisk.category}
                   </p>
                   <p className="mt-1 text-12 text-gray-600">
-                    {formatAmount(Math.max(0, budgetRisk.remaining))} left from{' '}
+                    <FormattedAmount amount={Math.max(0, budgetRisk.remaining)} /> left from{' '}
                     <FormattedAmount amount={budgetRisk.monthlyLimit} />
                   </p>
                 </div>

@@ -25,11 +25,6 @@ export const sidebarLinks = [
     label: "Insights",
   },
   {
-    imgURL: "/icons/alerts.svg",
-    route: "/alerts",
-    label: "Alerts",
-  },
-  {
     imgURL: "/icons/subscriptions.svg",
     route: "/subscriptions",
     label: "Subscriptions",
@@ -50,12 +45,7 @@ export const sidebarLinks = [
     label: "Transfer Funds",
   },
   {
-    imgURL: "/icons/settings.svg",
-    route: "/settings",
-    label: "Settings",
-  },
-  {
-    imgURL: "/icons/logo.svg",
+    imgURL: "/icons/assistant.svg",
     route: "/assistant",
     label: "Finance Assistant",
   },

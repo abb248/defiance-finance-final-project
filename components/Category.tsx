@@ -2,7 +2,6 @@ import { FormattedAmount } from '@/components/FormattedAmount';
 import { CircleDollarSign, CreditCard, Landmark, WalletCards } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
-import { formatAmount } from "@/lib/utilsz";
 
 const categoryStyles = [
   {

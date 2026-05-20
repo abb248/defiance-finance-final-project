@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { enroll2FA, challenge2FA, verify2FA, getMfaStatus } from "@/lib/actions/user.actions";
 
 const TwoFactorAuth = () => {
@@ -68,12 +69,24 @@ const TwoFactorAuth = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 shadow-sm max-w-md mx-auto mt-8">
-      <h2 className="text-24 font-bold text-gray-900 mb-2">Two-Factor Authentication (2FA)</h2>
+    <div className="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <ShieldCheck size={19} />
+        </div>
+        <div>
+          <h2 className="text-18 font-semibold text-gray-900">
+            Two-Factor Authentication
+          </h2>
+          <p className="text-13 text-gray-600">
+            Protect sign-ins with an authenticator app.
+          </p>
+        </div>
+      </div>
       
       {step === "init" && (
-        <div className="text-center">
-          <p className="text-14 text-gray-500 mb-6">
+        <div>
+          <p className="mb-6 text-14 text-gray-600">
             Secure your account against unauthorized access by linking it with Google or Microsoft Authenticator.
           </p>
           
@@ -129,10 +142,8 @@ const TwoFactorAuth = () => {
 
       {step === "success" && (
         <div className="text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-            </svg>
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
+            <CheckCircle2 className="size-8 text-green-600" />
           </div>
           <h3 className="text-18 font-semibold text-green-700 mb-2">2FA Successfully Enabled!</h3>
           <p className="text-14 text-gray-500">
@@ -143,10 +154,8 @@ const TwoFactorAuth = () => {
 
       {step === "active" && (
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
+            <CheckCircle2 className="size-8 text-blue-600" />
           </div>
           <h3 className="text-18 font-semibold text-blue-700 mb-2">2FA is Already Active</h3>
           <p className="text-14 text-gray-500">

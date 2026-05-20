@@ -1,7 +1,7 @@
 import { FormattedAmount } from '@/components/FormattedAmount';
 import Link from "next/link";
 
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 const BankTabItem = ({
   account,
@@ -21,13 +21,7 @@ const BankTabItem = ({
       })}
     >
       <div
-        className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full text-12 font-bold",
-          {
-            "bg-blue-600 text-white": isActive,
-            "bg-gray-200 text-gray-700": !isActive,
-          }
-        )}
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-12 font-bold text-white"
       >
         {shortName}
       </div>
