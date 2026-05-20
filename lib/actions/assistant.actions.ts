@@ -2,7 +2,7 @@
 
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
-import { formatAmount } from "@/lib/utilsz";
+import { formatAmount, getAccountIdentifier } from "@/lib/utilsz";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -12,6 +12,10 @@ type AssistantAccountSummary = {
   name: string;
   bankName: string;
   balance: number;
+};
+
+type AssistantDefaultReceivingAccount = AssistantAccountSummary & {
+  shareableId?: string;
 };
 
 type AssistantCategorySummary = {
@@ -94,6 +98,7 @@ export type FinanceAssistantOverview = {
   totalBalance: number;
   answerMode: "gemini" | "basic";
   accounts: AssistantAccountSummary[];
+  defaultReceivingAccount: AssistantDefaultReceivingAccount | null;
   monthSpent: number;
   monthIncome: number;
   projectedMonthSpending: number;
@@ -137,6 +142,8 @@ const detectTurkish = (question: string) =>
     "bakiye",
     "islem",
     "tasarruf",
+    "varsayilan",
+    "alici",
   ]);
 
 const getMonthTiming = () => {
@@ -156,6 +163,7 @@ const buildAssistantContext = (overview: FinanceAssistantOverview) => ({
     bankName: account.bankName,
     balance: account.balance,
   })),
+  defaultReceivingAccount: overview.defaultReceivingAccount,
   thisMonth: {
     spent: overview.monthSpent,
     income: overview.monthIncome,
@@ -328,6 +336,34 @@ const buildOverview = (
     [...monthExpenses].sort((a, b) => b.amount - a.amount)[0] || null;
   const topAccount =
     [...accounts].sort((a, b) => b.currentBalance - a.currentBalance)[0] || null;
+  const defaultReceivingId =
+    (user as any).default_receiving_account_id ||
+    (user as any).defaultReceivingAccountId ||
+    (user as any).default_account_id ||
+    (user as any).defaultAccountId ||
+    "";
+  const defaultReceivingAccountRaw =
+    accounts.find((account) => {
+      const accountIds = [
+        getAccountIdentifier(account),
+        account.supabaseItemId,
+        account.shareableId,
+        account.id,
+      ].map((id) => String(id || ""));
+
+      return defaultReceivingId ? accountIds.includes(String(defaultReceivingId)) : false;
+    }) || accounts[0] || null;
+  const defaultReceivingAccount = defaultReceivingAccountRaw
+    ? {
+        id: defaultReceivingAccountRaw.supabaseItemId,
+        name: defaultReceivingAccountRaw.name || "Bank account",
+        bankName: defaultReceivingAccountRaw.bankName || "Connected bank",
+        balance: Number(defaultReceivingAccountRaw.currentBalance) || 0,
+        shareableId:
+          defaultReceivingAccountRaw.shareableId ||
+          defaultReceivingAccountRaw.supabaseItemId,
+      }
+    : null;
   const topCategory = topCategories[0] || null;
   const budgetAnalyses = (preferences.budgets || [])
     .filter((budget) => budget.category && Number(budget.monthlyLimit) > 0)
@@ -436,6 +472,9 @@ const buildOverview = (
     upcomingSubscription
       ? `${upcomingSubscription.name} is due in ${upcomingSubscription.daysUntilDue} days.`
       : "No recurring bill has been added yet.",
+    defaultReceivingAccount
+      ? `Default receiving account is ${defaultReceivingAccount.name}.`
+      : "No default receiving account is selected yet.",
   ];
 
   return {
@@ -449,6 +488,7 @@ const buildOverview = (
       bankName: account.bankName || "Connected bank",
       balance: Number(account.currentBalance) || 0,
     })),
+    defaultReceivingAccount,
     monthSpent,
     monthIncome,
     projectedMonthSpending,
@@ -468,6 +508,7 @@ const buildOverview = (
       "How are my budgets doing?",
       "How close am I to my savings goals?",
       "Which bills are coming soon?",
+      "What is my default receiving account?",
     ],
   };
 };
@@ -552,6 +593,31 @@ export const askFinanceAssistant = async (
     answer = isTurkish
       ? `Son islemlerin: ${recentText || "henuz islem bulunmuyor"}.`
       : `Your recent transactions are: ${recentText || "no transactions found yet"}.`;
+  } else if (
+    includesAny(normalizedQuestion, [
+      "default receiving",
+      "receiving account",
+      "default account",
+      "transfer default",
+      "default receiver",
+      "varsayilan hesap",
+      "alici hesap",
+      "transfer hesabi",
+    ])
+  ) {
+    const defaultAccount = overview.defaultReceivingAccount;
+
+    answer = defaultAccount
+      ? isTurkish
+        ? `Varsayilan alici hesabin ${defaultAccount.name}. Bakiye ${formatAmount(
+            defaultAccount.balance
+          )}. Hesap ID: ${defaultAccount.shareableId || defaultAccount.id}.`
+        : `Your default receiving account is ${defaultAccount.name}. Balance is ${formatAmount(
+            defaultAccount.balance
+          )}. Account ID: ${defaultAccount.shareableId || defaultAccount.id}.`
+      : isTurkish
+      ? "Varsayilan alici hesap secilmemis."
+      : "No default receiving account is selected yet.";
   } else if (
     includesAny(normalizedQuestion, [
       "account",

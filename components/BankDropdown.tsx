@@ -1,9 +1,10 @@
 "use client";
-import { FormattedAmount } from '@/components/FormattedAmount';
 
+import { FormattedAmount } from "@/components/FormattedAmount";
+import { Check, ChevronDown, Landmark } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { formatAmount, getAccountIdentifier } from "@/lib/utilsz";
+import { cn, getAccountIdentifier } from "@/lib/utilsz";
 
 interface BankAccount {
   id: string;
@@ -81,17 +82,8 @@ const BankDropdown = ({
         id="bank-dropdown-trigger"
       >
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-            >
-              <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
-            </svg>
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+            <Landmark size={16} />
           </div>
           <div className="min-w-0">
             <span className="block truncate text-14 font-medium text-gray-900">
@@ -99,25 +91,17 @@ const BankDropdown = ({
             </span>
             {displayed ? (
               <span className="block truncate text-12 text-gray-500">
-                {displayed.bankName || "Account"} ·{" "}
+                {displayed.bankName || "Account"} -{" "}
                 <FormattedAmount amount={displayed.currentBalance || 0} />
               </span>
             ) : null}
           </div>
         </div>
-        <svg
-          className={`size-5 shrink-0 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <ChevronDown
+          className={cn("size-5 shrink-0 text-gray-500 transition-transform", {
+            "rotate-180": isOpen,
+          })}
+        />
       </button>
 
       {isOpen ? (
@@ -133,46 +117,26 @@ const BankDropdown = ({
                 key={account.id}
                 type="button"
                 onClick={() => handleSelect(account)}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-blue-25 ${
-                  isSelected ? "bg-blue-25" : ""
-                }`}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-blue-25",
+                  { "bg-blue-25": isSelected }
+                )}
                 id={`bank-option-${account.id}`}
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2"
-                  >
-                    <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
-                  </svg>
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                  <Landmark size={16} />
                 </div>
                 <div className="min-w-0 flex-1 flex-col">
                   <span className="truncate text-14 font-medium text-gray-900">
                     {account.name}
                   </span>
                   <span className="truncate text-12 text-gray-500">
-                    {account.bankName || "Account"} ·{" "}
+                    {account.bankName || "Account"} -{" "}
                     <FormattedAmount amount={account.currentBalance || 0} />
                   </span>
                 </div>
                 {isSelected ? (
-                  <svg
-                    className="ml-auto size-5 shrink-0 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <Check className="ml-auto size-5 shrink-0 text-blue-600" />
                 ) : null}
               </button>
             );

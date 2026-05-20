@@ -1,6 +1,6 @@
-import DefaultReceivingAccountSelect from "@/components/DefaultReceivingAccountSelect";
-import HeaderBox from "@/components/HeaderBox";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
+import HeaderBox from "@/components/HeaderBox";
+import SettingsDashboard from "@/components/SettingsDashboard";
 import { getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { redirect } from "next/navigation";
@@ -23,23 +23,19 @@ const SettingsPage = async () => {
     <section className="payment-transfer">
       <HeaderBox
         title="Settings"
-        subtext="Manage your preferences and default receiving account."
+        subtext="Manage your profile, transfer defaults, and app preferences."
       />
 
-      <section className="w-full pt-5 pb-5">
-        {accountsData.length > 0 ? (
-          <DefaultReceivingAccountSelect
-            accounts={accountsData}
-            currentDefaultId={currentDefaultId}
-          />
-        ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-10 text-center text-14 text-gray-600">
-            Connect a bank account first to choose a default receiving account.
-          </div>
-        )}
+      <section className="w-full pt-5">
+        <SettingsDashboard
+          user={loggedIn}
+          accounts={accountsData}
+          totalCurrentBalance={Number(accounts?.totalCurrentBalance) || 0}
+          currentDefaultId={currentDefaultId}
+        />
       </section>
 
-      <section className="w-full pt-5 pb-5">
+      <section className="w-full pb-5">
         <ChangePasswordForm />
       </section>
     </section>
@@ -47,4 +43,3 @@ const SettingsPage = async () => {
 };
 
 export default SettingsPage;
-

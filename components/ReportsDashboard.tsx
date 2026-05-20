@@ -1,5 +1,4 @@
 "use client";
-import { FormattedAmount } from '@/components/FormattedAmount';
 
 import Link from "next/link";
 import {
@@ -17,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
+import { FormattedAmount } from "@/components/FormattedAmount";
 import ReportsCharts from "@/components/ReportsCharts";
 import {
   analyzeSavingsGoals,
@@ -26,7 +26,7 @@ import {
   type StoredSubscription,
 } from "@/lib/budget-utils";
 import type { FinancialReport } from "@/lib/report-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 
 type ReportsDashboardProps = {
   report: FinancialReport;
@@ -40,7 +40,7 @@ const MetricCard = ({
   tone = "blue",
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   detail: string;
   icon: ReactNode;
   tone?: "blue" | "green" | "red" | "gray";
@@ -125,28 +125,28 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Income"
-          value=<FormattedAmount amount={report.currentMonthIncome} />
+          value={<FormattedAmount amount={report.currentMonthIncome} />}
           detail={`Money in during ${report.monthLabel}`}
           icon={<ArrowUpRight size={20} />}
           tone="green"
         />
         <MetricCard
           label="Spending"
-          value=<FormattedAmount amount={report.currentMonthSpending} />
+          value={<FormattedAmount amount={report.currentMonthSpending} />}
           detail={`${report.spendingChangePercent}% vs ${report.previousMonthLabel}`}
           icon={spendingChangeIsUp ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
           tone={spendingChangeIsUp ? "red" : "blue"}
         />
         <MetricCard
           label="Net cash flow"
-          value=<FormattedAmount amount={report.currentMonthNet} />
+          value={<FormattedAmount amount={report.currentMonthNet} />}
           detail={`${report.transactionCount} transactions this month`}
           icon={<ArrowDownRight size={20} />}
           tone={report.currentMonthNet >= 0 ? "blue" : "red"}
         />
         <MetricCard
           label="Average expense"
-          value=<FormattedAmount amount={report.averageExpense} />
+          value={<FormattedAmount amount={report.averageExpense} />}
           detail="Average debit transaction"
           icon={<ReceiptText size={20} />}
           tone="gray"
@@ -204,7 +204,7 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
               </p>
               <p className="mt-1 text-13 text-gray-600">
                 {report.largestExpense
-                  ? formatAmount(report.largestExpense.amount)
+                  ? <FormattedAmount amount={report.largestExpense.amount} />
                   : "No debit transaction"}
               </p>
             </div>
@@ -230,9 +230,14 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
                 {topGoal?.name || "No goal yet"}
               </p>
               <p className="mt-1 text-13 text-gray-600">
-                {topGoal
-                  ? `${topGoal.percentage}% complete, $<FormattedAmount amount={topGoal.remaining} /> left`
-                  : "Add one from Goals"}
+                {topGoal ? (
+                  <>
+                    {topGoal.percentage}% complete,{" "}
+                    <FormattedAmount amount={topGoal.remaining} /> left
+                  </>
+                ) : (
+                  "Add one from Goals"
+                )}
               </p>
             </div>
             <div className="rounded-lg bg-gray-25 p-4">

@@ -218,13 +218,16 @@ const TransactionsTable = ({
           </thead>
 
           <tbody>
-            {transactions.map((transaction) => {
+            {transactions.map((transaction, index) => {
               const isDebit = getSignedAmount(transaction) < 0;
               const amount = formatTransactionAmount(transaction);
+              const rowKey = `${transaction.accountId || "account"}-${
+                transaction.id
+              }-${index}`;
 
               return (
                 <tr
-                  key={transaction.id}
+                  key={rowKey}
                   role="button"
                   tabIndex={0}
                   onClick={() => openDetails(transaction)}

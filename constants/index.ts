@@ -50,7 +50,7 @@ export const sidebarLinks = [
     label: "Transfer Funds",
   },
   {
-    imgURL: "/icons/alerts.svg",
+    imgURL: "/icons/settings.svg",
     route: "/settings",
     label: "Settings",
   },

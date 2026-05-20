@@ -15,7 +15,7 @@ import {
   type StoredSavingsGoal,
   type StoredSubscription,
 } from "@/lib/budget-utils";
-import { cn, formatAmount } from "@/lib/utilsz";
+import { cn } from "@/lib/utilsz";
 import {
   Loader2,
   Plus,
@@ -56,7 +56,11 @@ const demoQuestionGroups = [
   },
   {
     label: "Accounts",
-    questions: ["Which account has the highest balance?", "Will my spending be high this month?"],
+    questions: [
+      "Which account has the highest balance?",
+      "What is my default receiving account?",
+      "Will my spending be high this month?",
+    ],
   },
 ];
 
@@ -423,7 +427,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
                           {budget.category}
                         </p>
                         <p className="text-12 text-gray-600">
-                          {formatAmount(Math.max(0, budget.remaining))} left from{" "}
+                          <FormattedAmount amount={Math.max(0, budget.remaining)} /> left from{" "}
                           <FormattedAmount amount={budget.monthlyLimit} />
                         </p>
                       </div>
