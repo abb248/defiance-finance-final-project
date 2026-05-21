@@ -2,6 +2,7 @@
 
 import { createSaltEdgeCustomer } from "@/lib/actions/saltedge.actions";
 import { createClient } from "@supabase/supabase-js";
+import { cache } from "react";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -179,7 +180,7 @@ const mapLocalTransaction = (transaction: any, accountId: string) => {
   };
 };
 
-export const getAccounts = async ({ email }: { email: string }) => {
+export const getAccounts = cache(async ({ email }: { email: string }) => {
   const customer = await createSaltEdgeCustomer(email);
   const customerId = customer?.customer_id;
   if (!customerId) return { data: [], totalBanks: 0, totalCurrentBalance: 0 };
@@ -220,7 +221,7 @@ export const getAccounts = async ({ email }: { email: string }) => {
   );
 
   return { data: mapped, totalBanks, totalCurrentBalance };
-};
+});
 
 export const getRecipientAccounts = async ({ email }: { email: string }) => {
   try {
@@ -235,7 +236,7 @@ export const getRecipientAccounts = async ({ email }: { email: string }) => {
   }
 };
 
-export const getAccount = async ({
+export const getAccount = cache(async ({
   supabaseItemId,
   connectionId,
   account,
@@ -299,4 +300,4 @@ export const getAccount = async ({
     console.error("Account details could not be fetched:", error);
     return null;
   }
-};
+});

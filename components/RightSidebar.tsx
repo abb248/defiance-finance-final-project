@@ -1,6 +1,7 @@
 "use client";
 
 import { FormattedAmount } from '@/components/FormattedAmount';
+import { useToast } from '@/components/ui/Toast';
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
@@ -28,6 +29,7 @@ import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/salt
 
 const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps) => {
   const router = useRouter();
+  const { showToast } = useToast();
   const categories = countTransactionCategories(transactions);
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
@@ -122,36 +124,25 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
 
   const handleAddBank = async () => {
     try {
-      console.log("1. İstek atılıyor: ", user.email);
-
-      // 1. Müşteri Oluştur
       const customer = await createSaltEdgeCustomer(user.email);
-      console.log("2. Salt Edge customer:", customer);
 
       const customerId = customer?.customer_id || customer?.id;
       if (!customer || !customerId) {
-        alert("HATA: Salt Edge müşteri oluşturamadı! VS Code terminaline (siyah ekrana) bak, API hatası dönmüş olabilir.");
+        showToast("Could not connect to bank service. Please try again later.", "error");
         return;
       }
 
-      // 2. Link Üret
       const connectUrl = await createConnectSession(String(customerId), window.location.origin);
-      console.log("3. Salt Edge connect_url:", connectUrl);
 
       if (!connectUrl) {
-        alert("HATA: Müşteri oluştu ama Salt Edge banka linki vermedi! VS Code terminalini kontrol et.");
+        showToast("Bank connection link could not be generated. Please try again.", "error");
         return;
       }
 
-      // 3. Başarılıysa Yönlendir
-      // Salt Edge connect_url harici bir domain olabiliyor; Next router.push bazen engelleyebiliyor.
       window.location.assign(connectUrl);
 
     } catch (error) {
-      console.error("Banka bağlama ekranı açılamadı", error);
-      const message =
-        error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error');
-      alert(`Beklenmeyen bir hata oluştu: ${message}\n\nTarayıcıda F12 → Console ve terminali kontrol et.`);
+      showToast("An unexpected error occurred while connecting your bank.", "error");
     }
   }
   return (

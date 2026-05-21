@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getPreferredCurrency } from '@/lib/actions/currency.actions';
 
-export const CURRENCY_CHANGED_EVENT = 'spendwise-currency-changed';
+export const CURRENCY_CHANGED_EVENT = 'defiance-currency-changed';
 
 export const useCurrency = () => {
   const [currency, setCurrency] = useState('USD');

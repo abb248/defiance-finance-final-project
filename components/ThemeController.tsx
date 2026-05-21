@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 
-export const THEME_CHANGED_EVENT = "spendwise-theme-changed";
+export const THEME_CHANGED_EVENT = "defiance-theme-changed";
 export type ThemePreference = "system" | "light" | "dark";
 
-const STORAGE_KEY = "spendwise-settings-preferences";
+const STORAGE_KEY = "defiance-settings-preferences";
 
 const getStoredTheme = (): ThemePreference => {
   try {

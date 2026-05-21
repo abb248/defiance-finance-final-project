@@ -216,6 +216,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
 
     hasSubmittedInitialQuestion.current = true;
     submitQuestion(initialQuestion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuestion, isPlannerLoaded]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

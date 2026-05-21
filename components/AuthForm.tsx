@@ -182,7 +182,21 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </form>
       ) : user ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-center gap-4 py-8 text-center">
+          <div className="flex size-16 items-center justify-center rounded-full bg-green-500/20">
+            <svg width="32" height="32" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-22 font-bold text-white">Account Created!</h2>
+          <p className="text-14 text-white/70">Your account has been created successfully. Redirecting you to sign in...</p>
+          <Button
+            type="button"
+            onClick={() => router.push('/sign-in')}
+            className="mt-2 w-full rounded-xl py-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-semibold"
+          >
+            Go to Sign In
+          </Button>
         </div>
       ) : (
         <Form {...form}>

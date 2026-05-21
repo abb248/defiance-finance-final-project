@@ -223,7 +223,7 @@ export const enroll2FA = async () => {
 
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: 'totp',
-      issuer: 'SpendWise',
+      issuer: 'Defiance Finance',
     });
 
     if (error) throw error;

@@ -120,19 +120,11 @@ export const createSaltEdgeCustomer = async (identifier: string) => {
           method: "GET",
         });
         
-        console.log("[saltedge] duplicated customer, fetched by id", {
-          identifier,
-          customer_id: byId?.data?.customer_id,
-        });
         return byId?.data || null;
       }
 
       // Hata mesajında ID yoksa, kaba kuvvet arama motorunu çalıştır ve listeyi tara.
       const existing = await listAllCustomersUntilFound(identifier);
-      console.log("[saltedge] duplicated customer, scanned list for identifier", {
-        identifier,
-        customer_id: existing?.customer_id,
-      });
       return existing || null;
     }
 
@@ -153,24 +145,15 @@ export const createSaltEdgeCustomer = async (identifier: string) => {
       const byId = await saltEdgeFetch(`/customers/${customerIdFromError}`, {
         method: "GET",
       });
-      console.log("[saltedge] duplicated customer (2xx), fetched by id", {
-        identifier,
-        customer_id: byId?.data?.customer_id,
-      });
       return byId?.data || null;
     }
 
     // ID yoksa listeyi tara.
     const existing = await listAllCustomersUntilFound(identifier);
-    console.log("[saltedge] duplicated customer (2xx), scanned list for identifier", {
-      identifier,
-      customer_id: existing?.customer_id,
-    });
     return existing || null;
   }
 
   // SENARYO 3: müşteri sıfırdan başarıyla oluşturuldu.
-  console.log("[saltedge] created customer", { identifier, customer_id: json?.data?.customer_id });
   return json?.data || null;
 };
 
@@ -208,20 +191,11 @@ export const createConnectSession = async (customerId: string, returnTo?: string
   
   // Eğer bağlantı URL'i oluşmadıysa log at ve hata fırlat
   if (!connectUrl) {
-    console.log("[saltedge] connect session response missing connect_url", {
-      customerId,
-      returnTo: effectiveReturnTo,
-      result,
-    });
     throw new Error(
-      `Salt Edge connect_url missing. Response: ${JSON.stringify(result)}`
+      `Salt Edge connect_url missing.`
     );
   }
 
   // URL başarıyla oluştuysa log at ve URL'i döndür
-  console.log("[saltedge] connect session created", {
-    customerId,
-    returnTo: effectiveReturnTo,
-  });
   return connectUrl;
 };

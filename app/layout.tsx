@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter, IBM_Plex_Serif } from "next/font/google";
 import * as Sentry from '@sentry/nextjs';
 import ThemeController from "@/components/ThemeController";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
@@ -34,8 +35,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
-        <ThemeController />
-        {children}
+        <ToastProvider>
+          <ThemeController />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

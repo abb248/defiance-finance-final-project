@@ -516,7 +516,7 @@ const BudgetManagement = ({
               <h2 className="mt-4 text-20 font-bold text-gray-900">No budgets yet</h2>
               <p className="mt-2 max-w-md text-14 text-gray-600">
                 Add monthly limits for the categories you want to watch. The progress
-                updates from this month's transactions.
+                updates from this month&apos;s transactions.
               </p>
             </div>
           )}

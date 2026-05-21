@@ -37,4 +37,4 @@ The assistant can answer questions about:
 - budget status
 - savings goal progress
 
-The design goal is to make SpendWise feel less like a passive dashboard and more like a personal finance guide.
+The design goal is to make Defiance Finance feel less like a passive dashboard and more like a personal finance guide.

@@ -28,7 +28,7 @@ type AlertsCenterProps = {
   report: FinancialReport;
 };
 
-const ALERTS_STORAGE_KEY = "spendwise-resolved-alerts";
+const ALERTS_STORAGE_KEY = "defiance-resolved-alerts";
 
 const severityTone: Record<FinancialAlert["severity"], string> = {
   high: "bg-red-50 text-red-700 border-red-100",

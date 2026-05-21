@@ -155,6 +155,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
           receiverId: data.shareableId,
           email: data.email,
           note: data.note,
+          currency: data.currency,
         })
         setClientSecret(result.client_secret)
         setTransferAmount(amount)

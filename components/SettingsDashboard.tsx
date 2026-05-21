@@ -36,7 +36,7 @@ type SettingsDashboardProps = {
   currentDefaultId?: string;
 };
 
-const STORAGE_KEY = "spendwise-settings-preferences";
+const STORAGE_KEY = "defiance-settings-preferences";
 
 const DEFAULT_PREFERENCES: SettingsPreferences = {
   theme: "system",

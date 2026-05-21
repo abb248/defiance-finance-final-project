@@ -24,7 +24,7 @@ export const createTransaction = async (transactionData: TransferTransactionData
       .insert([
         {
           amount: transactionData.amount,
-          currency: "TRY",
+          currency: transactionData.currency || "TRY",
           status: "success",
           type: "transfer",
           recipient_email: transactionData.email,

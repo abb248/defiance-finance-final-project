@@ -1,4 +1,4 @@
-export const PLANNER_STORAGE_KEY = "spendwise-finance-planner";
+export const PLANNER_STORAGE_KEY = "defiance-finance-planner";
 
 export type StoredBudget = {
   id: string;
