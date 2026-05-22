@@ -14,6 +14,7 @@ export const createTransaction = async (transactionData: TransferTransactionData
       transactionData.name || "Online Transfer",
       `From: ${transactionData.senderId}`,
       `Sent to: ${transactionData.receiverId}`,
+      transactionData.referenceNumber ? `Reference: ${transactionData.referenceNumber}` : null,
       transactionData.note ? `Note: ${transactionData.note}` : null,
     ]
       .filter(Boolean)

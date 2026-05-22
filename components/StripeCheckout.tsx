@@ -10,11 +10,12 @@ import { Button } from './ui/button'
 
 type StripeCheckoutProps = {
   amount: number
+  currency: string
   onCancel: () => void
   onSuccess: () => Promise<void>
 }
 
-const StripeCheckout = ({ amount, onCancel, onSuccess }: StripeCheckoutProps) => {
+const StripeCheckout = ({ amount, currency, onCancel, onSuccess }: StripeCheckoutProps) => {
   const stripe = useStripe()
   const elements = useElements()
 
@@ -54,7 +55,6 @@ const StripeCheckout = ({ amount, onCancel, onSuccess }: StripeCheckoutProps) =>
         return
       }
 
-      window.location.href = '/payment-transfer?success=true'
       return
     }
 
@@ -67,7 +67,7 @@ const StripeCheckout = ({ amount, onCancel, onSuccess }: StripeCheckoutProps) =>
       <div className="flex flex-col gap-2 border-b border-gray-200 pb-4">
         <h2 className="text-18 font-semibold text-gray-900">Secure Checkout</h2>
         <p className="text-14 text-gray-600">
-          Enter your card details to complete the transfer of TRY {amount.toFixed(2)}
+          Enter your card details to complete the transfer of {currency} {amount.toFixed(2)}
         </p>
       </div>
 
@@ -94,7 +94,7 @@ const StripeCheckout = ({ amount, onCancel, onSuccess }: StripeCheckoutProps) =>
           disabled={isLoading || !stripe || !elements}
           className="payment-transfer_btn"
         >
-          {isLoading ? 'Processing...' : `Pay TRY ${amount.toFixed(2)}`}
+          {isLoading ? 'Processing...' : `Pay ${currency} ${amount.toFixed(2)}`}
         </Button>
       </div>
     </form>

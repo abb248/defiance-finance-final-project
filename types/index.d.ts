@@ -146,4 +146,5 @@ declare type TransferTransactionData = {
   email: string;
   note?: string;
   currency?: string;
+  referenceNumber?: string;
 };
