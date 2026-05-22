@@ -3,17 +3,26 @@
 import { useEffect } from "react";
 
 export const THEME_CHANGED_EVENT = "defiance-theme-changed";
+export const SETTINGS_STORAGE_KEY = "defiance-settings-preferences";
+export const LEGACY_SETTINGS_STORAGE_KEY = "spendwise-settings-preferences";
 export type ThemePreference = "system" | "light" | "dark";
 
-const STORAGE_KEY = "defiance-settings-preferences";
+const isThemePreference = (value: unknown): value is ThemePreference =>
+  value === "system" || value === "light" || value === "dark";
+
+const readStoredPreferences = () => {
+  const saved =
+    window.localStorage.getItem(SETTINGS_STORAGE_KEY) ||
+    window.localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
+
+  if (!saved) return null;
+  return JSON.parse(saved);
+};
 
 const getStoredTheme = (): ThemePreference => {
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) return "system";
-
-    const parsed = JSON.parse(saved);
-    return parsed?.theme || "system";
+    const parsed = readStoredPreferences();
+    return isThemePreference(parsed?.theme) ? parsed.theme : "system";
   } catch {
     return "system";
   }

@@ -15,6 +15,8 @@ import CurrencySelector from "@/components/CurrencySelector";
 import EmailAddressForm from "@/components/EmailAddressForm";
 import ProfileNameForm from "@/components/ProfileNameForm";
 import {
+  LEGACY_SETTINGS_STORAGE_KEY,
+  SETTINGS_STORAGE_KEY,
   THEME_CHANGED_EVENT,
   type ThemePreference,
 } from "@/components/ThemeController";
@@ -35,8 +37,6 @@ type SettingsDashboardProps = {
   accounts: Account[];
   currentDefaultId?: string;
 };
-
-const STORAGE_KEY = "defiance-settings-preferences";
 
 const DEFAULT_PREFERENCES: SettingsPreferences = {
   theme: "system",
@@ -136,9 +136,14 @@ const SettingsDashboard = ({
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved =
+        window.localStorage.getItem(SETTINGS_STORAGE_KEY) ||
+        window.localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
+
       if (saved) {
-        setPreferences({ ...DEFAULT_PREFERENCES, ...JSON.parse(saved) });
+        const next = { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) };
+        setPreferences(next);
+        window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
       }
     } catch {
       setPreferences(DEFAULT_PREFERENCES);
@@ -151,7 +156,7 @@ const SettingsDashboard = ({
   ) => {
     setPreferences((current) => {
       const next = { ...current, [key]: value };
-      window.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.localStorage?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
 
@@ -168,7 +173,7 @@ const SettingsDashboard = ({
 
   const handleSavePreferences = () => {
     try {
-      window.localStorage?.setItem(STORAGE_KEY, JSON.stringify(preferences));
+      window.localStorage?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(preferences));
       setSaveMessage("Preferences saved on this device.");
     } catch {
       setSaveMessage("Preferences saved for this session.");

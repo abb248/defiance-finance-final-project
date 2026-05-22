@@ -66,6 +66,7 @@ const ToastItem = ({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       <p className={`flex-1 text-14 font-medium ${config.text}`}>{toast.message}</p>
       <button
         type="button"
+        aria-label="Dismiss notification"
         onClick={() => {
           setIsVisible(false);
           setTimeout(() => onDismiss(toast.id), 300);
@@ -93,7 +94,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[9999] flex w-full max-w-sm flex-col gap-2">
+      <div className="pointer-events-none fixed left-4 right-4 top-4 z-[9999] flex flex-col gap-2 sm:left-auto sm:max-w-sm">
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
             <ToastItem toast={toast} onDismiss={dismissToast} />

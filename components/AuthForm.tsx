@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, signUp, challenge2FA, verify2FA } from '@/lib/actions/user.actions';
 
@@ -27,6 +27,16 @@ const AuthForm = ({ type }: { type: 'sign-in' | 'sign-up' }) => {
   const [mfaCode, setMfaCode] = useState("");
 
   const formSchema = authFormSchema(type);
+
+  useEffect(() => {
+    if (type !== "sign-up" || !user) return;
+
+    const timer = window.setTimeout(() => {
+      router.push("/sign-in");
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
+  }, [router, type, user]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,8 +102,7 @@ const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setFormError('Sign-in failed. Please try again.');
       }
     }
-  } catch (error) {
-    console.log("Error submitting form:", error);
+  } catch {
     setFormError('An unexpected error occurred. Please try again.');
   } finally {
     setIsLoading(false);
@@ -145,7 +154,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
         <div className="flex flex-col gap-1 md:gap-3">
           <h1 className="text-24 lg:text-36 font-semibold text-white">
             {user
-              ? 'Link Account'
+              ? 'Account Created'
               : type === 'sign-in'
               ? 'Sign In'
               : 'Sign Up'}
@@ -153,7 +162,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
 
           <p className="text-16 font-normal text-white/80">
             {user
-              ? 'Link your account to get started'
+              ? 'Redirecting you to sign in'
               : 'Please enter your details'}
           </p>
         </div>
