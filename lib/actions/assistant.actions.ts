@@ -109,6 +109,7 @@ export type AssistantHealthInsight = {
 
 export type FinanceAssistantOverview = {
   userName: string;
+  userScope: string;
   accountCount: number;
   totalBalance: number;
   answerMode: "gemini" | "basic";
@@ -600,6 +601,7 @@ const buildOverview = (
 
   return {
     userName: user.firstName || user.email,
+    userScope: user.email,
     accountCount: accounts.length,
     totalBalance,
     answerMode: process.env.GEMINI_API_KEY ? "gemini" : "basic",

@@ -21,6 +21,7 @@ const Goals = async () => {
       <GoalsCenter
         accounts={accountsData}
         totalCurrentBalance={Number(accounts?.totalCurrentBalance) || 0}
+        userScope={loggedIn.email}
       />
     </section>
   );

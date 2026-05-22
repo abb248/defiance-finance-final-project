@@ -36,6 +36,7 @@ const Budgets = async () => {
         accounts={accountsData}
         transactions={transactions}
         totalCurrentBalance={Number(accounts?.totalCurrentBalance) || 0}
+        userScope={loggedIn.email}
       />
     </section>
   );

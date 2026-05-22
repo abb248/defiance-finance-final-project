@@ -43,7 +43,7 @@ const Alerts = async () => {
         subtext="Review warnings about budgets, goals, spending changes, and account balances."
       />
 
-      <AlertsCenter report={report} />
+      <AlertsCenter report={report} userScope={loggedIn.email} />
     </section>
   );
 };

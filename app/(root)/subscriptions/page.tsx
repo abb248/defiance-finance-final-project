@@ -32,7 +32,11 @@ const Subscriptions = async () => {
         subtext="Track recurring bills, fixed monthly costs, and upcoming payment reminders."
       />
 
-      <SubscriptionsCenter accounts={accountsData} transactions={transactions} />
+      <SubscriptionsCenter
+        accounts={accountsData}
+        transactions={transactions}
+        userScope={loggedIn.email}
+      />
     </section>
   );
 };

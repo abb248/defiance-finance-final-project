@@ -33,6 +33,7 @@ type BudgetManagementProps = {
   accounts: Account[];
   transactions: Transaction[];
   totalCurrentBalance: number;
+  userScope?: string;
 };
 
 const statusCopy: Record<BudgetAnalysis["status"], { label: string; tone: string }> = {
@@ -74,6 +75,7 @@ const BudgetManagement = ({
   accounts,
   transactions,
   totalCurrentBalance,
+  userScope,
 }: BudgetManagementProps) => {
   const currency = useCurrency();
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
@@ -130,7 +132,7 @@ const BudgetManagement = ({
   );
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(userScope);
     setBudgets(
       planner.budgets.filter((budget) => {
         const limit = Number(budget.monthlyLimit);
@@ -140,13 +142,13 @@ const BudgetManagement = ({
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
     setIsLoaded(true);
-  }, []);
+  }, [userScope]);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions });
-  }, [budgets, isLoaded, savingsGoals, subscriptions]);
+    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions }, userScope);
+  }, [budgets, isLoaded, savingsGoals, subscriptions, userScope]);
 
   useEffect(() => {
     if (!categoryChoice && categoryOptions[0]) {

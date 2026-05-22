@@ -114,18 +114,18 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   );
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(overview.userScope);
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
     setIsPlannerLoaded(true);
-  }, []);
+  }, [overview.userScope]);
 
   useEffect(() => {
     if (!isPlannerLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions });
-  }, [budgets, isPlannerLoaded, savingsGoals, subscriptions]);
+    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions }, overview.userScope);
+  }, [budgets, isPlannerLoaded, overview.userScope, savingsGoals, subscriptions]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

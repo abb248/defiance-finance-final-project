@@ -26,9 +26,14 @@ import { cn } from "@/lib/utilsz";
 
 type AlertsCenterProps = {
   report: FinancialReport;
+  userScope?: string;
 };
 
 const ALERTS_STORAGE_KEY = "defiance-resolved-alerts";
+const getAlertsStorageKey = (userScope?: string) => {
+  const cleanScope = userScope?.trim().toLowerCase();
+  return cleanScope ? `${ALERTS_STORAGE_KEY}:${cleanScope}` : ALERTS_STORAGE_KEY;
+};
 
 const severityTone: Record<FinancialAlert["severity"], string> = {
   high: "bg-red-50 text-red-700 border-red-100",
@@ -45,18 +50,18 @@ const categoryLabels: Record<FinancialAlert["category"], string> = {
   subscription: "Subscription",
 };
 
-const getResolvedAlerts = () => {
+const getResolvedAlerts = (userScope?: string) => {
   if (typeof window === "undefined") return [];
 
   try {
-    const stored = window.localStorage.getItem(ALERTS_STORAGE_KEY);
+    const stored = window.localStorage.getItem(getAlertsStorageKey(userScope));
     return stored ? (JSON.parse(stored) as string[]) : [];
   } catch {
     return [];
   }
 };
 
-const AlertsCenter = ({ report }: AlertsCenterProps) => {
+const AlertsCenter = ({ report, userScope }: AlertsCenterProps) => {
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [goals, setGoals] = useState<StoredSavingsGoal[]>([]);
   const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
@@ -64,16 +69,16 @@ const AlertsCenter = ({ report }: AlertsCenterProps) => {
   const [activeFilter, setActiveFilter] = useState<"open" | "resolved" | "all">("open");
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(userScope);
     setBudgets(planner.budgets);
     setGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
-    setResolvedAlerts(getResolvedAlerts());
-  }, []);
+    setResolvedAlerts(getResolvedAlerts(userScope));
+  }, [userScope]);
 
   useEffect(() => {
-    window.localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(resolvedAlerts));
-  }, [resolvedAlerts]);
+    window.localStorage.setItem(getAlertsStorageKey(userScope), JSON.stringify(resolvedAlerts));
+  }, [resolvedAlerts, userScope]);
 
   const budgetAnalyses = useMemo(
     () => analyzeBudgetsFromCategorySpending(budgets, report.categoryBreakdown),

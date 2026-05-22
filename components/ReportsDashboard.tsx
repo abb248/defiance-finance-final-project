@@ -30,6 +30,7 @@ import { cn } from "@/lib/utilsz";
 
 type ReportsDashboardProps = {
   report: FinancialReport;
+  userScope?: string;
 };
 
 const MetricCard = ({
@@ -66,7 +67,7 @@ const MetricCard = ({
   </div>
 );
 
-const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
+const ReportsDashboard = ({ report, userScope }: ReportsDashboardProps) => {
   const [copyStatus, setCopyStatus] = useState("Copy report");
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
   const [subscriptions, setSubscriptions] = useState<StoredSubscription[]>([]);
@@ -94,10 +95,10 @@ const ReportsDashboard = ({ report }: ReportsDashboardProps) => {
   )}`;
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(userScope);
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
-  }, []);
+  }, [userScope]);
 
   const copyReport = async () => {
     const text = [

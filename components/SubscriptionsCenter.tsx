@@ -31,6 +31,7 @@ import { cn, convertAmount } from "@/lib/utilsz";
 type SubscriptionsCenterProps = {
   accounts: Account[];
   transactions: Transaction[];
+  userScope?: string;
 };
 
 const statusTone: Record<SubscriptionAnalysis["status"], string> = {
@@ -60,7 +61,7 @@ const formatEditableMoney = (amount: number) => {
   return Number(amount.toFixed(2)).toString();
 };
 
-const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProps) => {
+const SubscriptionsCenter = ({ accounts, transactions, userScope }: SubscriptionsCenterProps) => {
   const currency = useCurrency();
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<StoredSavingsGoal[]>([]);
@@ -103,18 +104,18 @@ const SubscriptionsCenter = ({ accounts, transactions }: SubscriptionsCenterProp
   ).length;
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(userScope);
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
     setIsLoaded(true);
-  }, []);
+  }, [userScope]);
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions });
-  }, [budgets, isLoaded, savingsGoals, subscriptions]);
+    savePlannerStateToStorage({ budgets, savingsGoals, subscriptions }, userScope);
+  }, [budgets, isLoaded, savingsGoals, subscriptions, userScope]);
 
   useEffect(() => {
     if (!accountName && accounts[0]?.name) {

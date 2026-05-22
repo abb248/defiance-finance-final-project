@@ -43,7 +43,7 @@ const Insights = async () => {
         subtext="Review your health score, key risks, and the next best financial actions."
       />
 
-      <InsightsDashboard report={report} />
+      <InsightsDashboard report={report} userScope={loggedIn.email} />
     </section>
   );
 };

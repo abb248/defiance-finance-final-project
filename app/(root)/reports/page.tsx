@@ -43,7 +43,7 @@ const Reports = async () => {
         subtext="Visualize income, spending, categories, and account activity in one place."
       />
 
-      <ReportsDashboard report={report} />
+      <ReportsDashboard report={report} userScope={loggedIn.email} />
     </section>
   );
 };

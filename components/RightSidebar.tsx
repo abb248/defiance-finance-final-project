@@ -116,11 +116,11 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
     'User'
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(user.email);
     setBudgets(planner.budgets);
     setSavingsGoals(planner.savingsGoals);
     setSubscriptions(planner.subscriptions);
-  }, []);
+  }, [user.email]);
 
   const handleAddBank = async () => {
     try {

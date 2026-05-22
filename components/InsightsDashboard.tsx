@@ -32,6 +32,7 @@ import { cn } from "@/lib/utilsz";
 
 type InsightsDashboardProps = {
   report: FinancialReport;
+  userScope?: string;
 };
 
 const factorIcons: Record<string, React.ReactNode> = {
@@ -54,15 +55,15 @@ const getScoreColor = (insight: FinancialHealthInsight) => {
   return "text-red-700";
 };
 
-const InsightsDashboard = ({ report }: InsightsDashboardProps) => {
+const InsightsDashboard = ({ report, userScope }: InsightsDashboardProps) => {
   const [budgets, setBudgets] = useState<StoredBudget[]>([]);
   const [goals, setGoals] = useState<StoredSavingsGoal[]>([]);
 
   useEffect(() => {
-    const planner = getPlannerStateFromStorage();
+    const planner = getPlannerStateFromStorage(userScope);
     setBudgets(planner.budgets);
     setGoals(planner.savingsGoals);
-  }, []);
+  }, [userScope]);
 
   const budgetAnalyses = useMemo(
     () => analyzeBudgetsFromCategorySpending(budgets, report.categoryBreakdown),

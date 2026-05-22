@@ -1,5 +1,10 @@
 export const PLANNER_STORAGE_KEY = "defiance-finance-planner";
 
+export const getPlannerStorageKey = (userScope?: string) => {
+  const cleanScope = userScope?.trim().toLowerCase();
+  return cleanScope ? `${PLANNER_STORAGE_KEY}:${cleanScope}` : PLANNER_STORAGE_KEY;
+};
+
 export type StoredBudget = {
   id: string;
   category: string;
@@ -323,13 +328,13 @@ export const analyzeSubscriptions = (
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 };
 
-export const getPlannerStateFromStorage = (): StoredPlannerState => {
+export const getPlannerStateFromStorage = (userScope?: string): StoredPlannerState => {
   if (typeof window === "undefined") {
     return { budgets: [], savingsGoals: [], subscriptions: [] };
   }
 
   try {
-    const storedPlanner = window.localStorage.getItem(PLANNER_STORAGE_KEY);
+    const storedPlanner = window.localStorage.getItem(getPlannerStorageKey(userScope));
     if (!storedPlanner) return { budgets: [], savingsGoals: [], subscriptions: [] };
 
     const parsed = JSON.parse(storedPlanner);
@@ -343,8 +348,11 @@ export const getPlannerStateFromStorage = (): StoredPlannerState => {
   }
 };
 
-export const savePlannerStateToStorage = (plannerState: StoredPlannerState) => {
+export const savePlannerStateToStorage = (
+  plannerState: StoredPlannerState,
+  userScope?: string
+) => {
   if (typeof window === "undefined") return;
 
-  window.localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(plannerState));
+  window.localStorage.setItem(getPlannerStorageKey(userScope), JSON.stringify(plannerState));
 };
