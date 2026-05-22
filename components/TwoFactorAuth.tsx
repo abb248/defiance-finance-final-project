@@ -28,15 +28,33 @@ const TwoFactorAuth = () => {
     setError("");
     try {
       const data = await enroll2FA();
-      if (data && data.id && (data.totp?.uri || data.totp?.qr_code)) {
-        setFactorId(data.id);
-        setQrCode(data.totp.uri || data.totp.qr_code); 
+      console.log("enroll2FA response:", JSON.stringify(data, null, 2));
+      
+      if (!data) {
+        setError("Server returned empty response.");
+        return;
+      }
+
+      // Check if server returned an error
+      if (data.__error) {
+        setError(`Server error: ${data.message}`);
+        return;
+      }
+
+      // Try to extract QR/URI from various possible response shapes
+      const uri = data.totp?.uri || data.uri || data.totp?.qr_code || data.qr_code;
+      const id = data.id;
+
+      if (id && uri) {
+        setFactorId(id);
+        setQrCode(uri); 
         setStep("scan");
       } else {
-        setError("Could not generate QR code. Please try again.");
+        setError(`Unexpected response format. Keys: ${Object.keys(data).join(', ')}`);
       }
-    } catch (err) {
-      setError("An error occurred.");
+    } catch (err: any) {
+      console.error("handleEnable2FA error:", err);
+      setError(`Client error: ${err?.message || String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -108,12 +126,12 @@ const TwoFactorAuth = () => {
             Scan the QR code below with your Authenticator app.
           </p>
           
-          <div className="bg-white p-4 rounded-lg mb-6 flex justify-center w-full">
+          <div className="bg-white p-6 rounded-xl mb-6 flex justify-center w-full border border-gray-100 shadow-sm">
             {qrCode.startsWith("otpauth://") ? (
-              <QRCodeSVG value={qrCode} size={192} level="H" />
+              <QRCodeSVG value={qrCode} size={256} level="M" includeMargin={true} />
             ) : (
               <div 
-                className="[&>svg]:w-48 [&>svg]:h-48 [&>svg]:max-w-full"
+                className="[&>svg]:w-64 [&>svg]:h-64 [&>svg]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: qrCode.replace(/^data:image\/svg\+xml;utf-8,/, '') }} 
               />
             )}

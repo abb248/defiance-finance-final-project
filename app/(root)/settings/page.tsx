@@ -35,9 +35,12 @@ const SettingsPage = async () => {
         />
       </section>
 
-      <section className="grid w-full gap-6 pb-5 xl:grid-cols-2">
-        <ChangePasswordForm />
-        <TwoFactorAuth />
+      <section className="w-full pt-6 pb-8">
+        <h2 className="text-20 font-bold text-gray-900 mb-4">Security</h2>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <ChangePasswordForm />
+          <TwoFactorAuth />
+        </div>
       </section>
     </section>
   );

@@ -221,17 +221,28 @@ export const enroll2FA = async () => {
   try {
     const supabase = await createSessionClient();
 
+    // Clean up any unverified TOTP factors first
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    // listFactors returns { all: [...], totp: [...] } or just an array depending on version. We handle both.
+    const allFactors = Array.isArray(factors) ? factors : (factors?.all || factors?.totp || []);
+    const unverifiedFactors = allFactors.filter((f: any) => f.status === 'unverified');
+    
+    for (const factor of unverifiedFactors) {
+      await supabase.auth.mfa.unenroll({ factorId: factor.id });
+    }
+
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: 'totp',
       issuer: 'Defiance Finance',
+      friendlyName: `Defiance-2FA-${Date.now()}`
     });
 
     if (error) throw error;
     
     return JSON.parse(JSON.stringify(data)); 
-  } catch (error) {
+  } catch (error: any) {
     console.error("2FA Enrollment Error:", error);
-    return null;
+    return { __error: true, message: error?.message || String(error) };
   }
 };
 
@@ -272,12 +283,16 @@ export const verify2FA = async (factorId: string, challengeId: string, code: str
 export const getMfaStatus = async () => {
   try {
     const supabase = await createSessionClient();
+    
+    // Check assurance level
     const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    
     if (error) throw error;
+    if (data.nextLevel === 'aal2') return true;
     
-    // nextLevel 'aal2' ise kullanıcının halihazırda onaylanmış bir 2FA faktörü var demektir.
-    return data.nextLevel === 'aal2';
+    // Also check if there are any verified TOTP factors
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const verifiedTotps = factors?.totp?.filter((f: any) => f.status === 'verified') || [];
+    return verifiedTotps.length > 0;
   } catch (error) {
     console.error("Could not get MFA status:", error);
     return false;
