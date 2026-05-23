@@ -210,6 +210,7 @@ const handleMfaSubmit = async (e: React.FormEvent) => {
       ) : (
         <Form {...form}>
           <form
+            method="POST"
             onSubmit={form.handleSubmit(onSubmit, () => {
               setFormError('Please correct the errors in the form.');
             })}

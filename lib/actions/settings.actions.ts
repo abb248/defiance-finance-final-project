@@ -14,50 +14,27 @@ export const updateDefaultReceivingAccount = async (accountId: string) => {
     return { success: false, error: "Missing account id." as const };
   }
 
-  const supabase = await createSessionClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createSessionClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    return { success: false, error: "Not authenticated." as const };
-  }
-
-  const admin = await createAdminClient();
-
-  const userKeyColumns = ["userID", "userId", "user_id", "auth_user_id"] as const;
-  const targetColumns = [
-    "default_receiving_account_id",
-    "defaultReceivingAccountId",
-    "default_account_id",
-    "defaultAccountId",
-  ] as const;
-
-  let lastError: any = null;
-
-  for (const key of userKeyColumns) {
-    for (const targetColumn of targetColumns) {
-      const { error } = await (admin as any)
-        .from("users")
-        .update({ [targetColumn]: normalizedAccountId })
-        .eq(key, user.id);
-
-      if (!error) {
-        return { success: true, error: null };
-      }
-
-      if (isMissingColumnError(error)) {
-        lastError = error;
-        continue;
-      }
-
-      lastError = error;
-      break;
+    if (userError || !user) {
+      return { success: false, error: "Not authenticated." as const };
     }
-  }
 
-  console.error("Default receiving account update failed:", lastError);
-  return { success: false, error: "Could not update default account." as const };
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { defaultReceivingAccountId: normalizedAccountId }
+    });
+
+    if (updateError) throw updateError;
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Default receiving account update failed:", error);
+    return { success: false, error: error?.message || "Could not update default account." as const };
+  }
 };
 

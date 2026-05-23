@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import CurrencySelector from "@/components/CurrencySelector";
+import DefaultReceivingAccountSelect from "@/components/DefaultReceivingAccountSelect";
 import EmailAddressForm from "@/components/EmailAddressForm";
 import ProfileNameForm from "@/components/ProfileNameForm";
 import {
@@ -280,6 +281,11 @@ const SettingsDashboard = ({
       <section className="space-y-4">
         <ProfileNameForm user={user} />
         <EmailAddressForm user={user} />
+        
+        <DefaultReceivingAccountSelect
+          accounts={accounts}
+          currentDefaultId={currentDefaultId}
+        />
 
         <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-3">

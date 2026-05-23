@@ -18,6 +18,7 @@ const SettingsPage = async () => {
     (loggedIn as any).defaultReceivingAccountId ||
     (loggedIn as any).default_account_id ||
     (loggedIn as any).defaultAccountId ||
+    (loggedIn as any).user_metadata?.defaultReceivingAccountId ||
     undefined;
 
   return (

@@ -368,6 +368,7 @@ const buildOverview = (
     (user as any).defaultReceivingAccountId ||
     (user as any).default_account_id ||
     (user as any).defaultAccountId ||
+    (user as any).user_metadata?.defaultReceivingAccountId ||
     "";
   const defaultReceivingAccountRaw =
     accounts.find((account) => {
