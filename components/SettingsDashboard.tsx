@@ -9,7 +9,7 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import CurrencySelector from "@/components/CurrencySelector";
 import DefaultReceivingAccountSelect from "@/components/DefaultReceivingAccountSelect";
@@ -37,6 +37,7 @@ type SettingsDashboardProps = {
   user: User;
   accounts: Account[];
   currentDefaultId?: string;
+  children?: ReactNode;
 };
 
 const DEFAULT_PREFERENCES: SettingsPreferences = {
@@ -115,6 +116,7 @@ const SettingsDashboard = ({
   user,
   accounts,
   currentDefaultId,
+  children,
 }: SettingsDashboardProps) => {
   const [preferences, setPreferences] =
     useState<SettingsPreferences>(DEFAULT_PREFERENCES);
@@ -183,99 +185,103 @@ const SettingsDashboard = ({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-      <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-start gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-            <Palette size={19} />
+      <section className="space-y-6">
+        <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <Palette size={19} />
+            </div>
+            <div>
+              <h2 className="text-18 font-semibold text-gray-900">
+                App preferences
+              </h2>
+              <p className="text-13 text-gray-600">
+                Personal display, digest, and alert choices.
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-18 font-semibold text-gray-900">
-              App preferences
-            </h2>
-            <p className="text-13 text-gray-600">
-              Personal display, digest, and alert choices.
-            </p>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <span className="text-12 font-semibold text-gray-600">
+                Display currency
+              </span>
+              <CurrencySelector />
+            </div>
+            <SelectField
+              label="Theme"
+              value={preferences.theme}
+              options={[
+                { label: "System default", value: "system" },
+                { label: "Light", value: "light" },
+                { label: "Dark", value: "dark" },
+              ]}
+              onChange={(value) =>
+                updatePreference("theme", value as SettingsPreferences["theme"])
+              }
+            />
+            <SelectField
+              label="Digest"
+              value={preferences.digest}
+              options={[
+                { label: "Daily", value: "daily" },
+                { label: "Weekly", value: "weekly" },
+                { label: "Monthly", value: "monthly" },
+              ]}
+              onChange={(value) =>
+                updatePreference("digest", value as SettingsPreferences["digest"])
+              }
+            />
           </div>
-        </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="flex flex-col gap-2">
-            <span className="text-12 font-semibold text-gray-600">
-              Display currency
-            </span>
-            <CurrencySelector />
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <ToggleRow
+              title="Budget alerts"
+              description="Warn when a category is close to its limit."
+              checked={preferences.budgetAlerts}
+              onChange={(checked) => updatePreference("budgetAlerts", checked)}
+            />
+            <ToggleRow
+              title="Bill reminders"
+              description="Highlight subscriptions before they are due."
+              checked={preferences.billReminders}
+              onChange={(checked) => updatePreference("billReminders", checked)}
+            />
+            <ToggleRow
+              title="Transfer emails"
+              description="Show transfer confirmation preferences."
+              checked={preferences.transferEmails}
+              onChange={(checked) => updatePreference("transferEmails", checked)}
+            />
+            <ToggleRow
+              title="Assistant tips"
+              description="Let the assistant suggest budgets and goals."
+              checked={preferences.assistantTips}
+              onChange={(checked) => updatePreference("assistantTips", checked)}
+            />
+            <ToggleRow
+              title="Hide balance preview"
+              description="Mask balance totals in compact dashboard previews."
+              checked={preferences.hideBalances}
+              onChange={(checked) => updatePreference("hideBalances", checked)}
+            />
           </div>
-          <SelectField
-            label="Theme"
-            value={preferences.theme}
-            options={[
-              { label: "System default", value: "system" },
-              { label: "Light", value: "light" },
-              { label: "Dark", value: "dark" },
-            ]}
-            onChange={(value) =>
-              updatePreference("theme", value as SettingsPreferences["theme"])
-            }
-          />
-          <SelectField
-            label="Digest"
-            value={preferences.digest}
-            options={[
-              { label: "Daily", value: "daily" },
-              { label: "Weekly", value: "weekly" },
-              { label: "Monthly", value: "monthly" },
-            ]}
-            onChange={(value) =>
-              updatePreference("digest", value as SettingsPreferences["digest"])
-            }
-          />
-        </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <ToggleRow
-            title="Budget alerts"
-            description="Warn when a category is close to its limit."
-            checked={preferences.budgetAlerts}
-            onChange={(checked) => updatePreference("budgetAlerts", checked)}
-          />
-          <ToggleRow
-            title="Bill reminders"
-            description="Highlight subscriptions before they are due."
-            checked={preferences.billReminders}
-            onChange={(checked) => updatePreference("billReminders", checked)}
-          />
-          <ToggleRow
-            title="Transfer emails"
-            description="Show transfer confirmation preferences."
-            checked={preferences.transferEmails}
-            onChange={(checked) => updatePreference("transferEmails", checked)}
-          />
-          <ToggleRow
-            title="Assistant tips"
-            description="Let the assistant suggest budgets and goals."
-            checked={preferences.assistantTips}
-            onChange={(checked) => updatePreference("assistantTips", checked)}
-          />
-          <ToggleRow
-            title="Hide balance preview"
-            description="Mask balance totals in compact dashboard previews."
-            checked={preferences.hideBalances}
-            onChange={(checked) => updatePreference("hideBalances", checked)}
-          />
-        </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={handleSavePreferences}
+              className="rounded-lg bg-bank-gradient px-4 py-2.5 text-14 font-semibold text-white shadow-form"
+            >
+              Save preferences
+            </button>
+            {saveMessage ? (
+              <p className="text-13 font-medium text-success-700">{saveMessage}</p>
+            ) : null}
+          </div>
+        </section>
 
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={handleSavePreferences}
-            className="rounded-lg bg-bank-gradient px-4 py-2.5 text-14 font-semibold text-white shadow-form"
-          >
-            Save preferences
-          </button>
-          {saveMessage ? (
-            <p className="text-13 font-medium text-success-700">{saveMessage}</p>
-          ) : null}
-        </div>
+        {children}
       </section>
 
       <section className="space-y-4">
@@ -352,7 +358,7 @@ const SettingsDashboard = ({
             <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
               <UserRound size={17} className="text-indigo-700" />
               <p className="text-13 font-medium text-gray-700">
-                Profile data stays tied to the signed-in account.
+                Profile data stays tied to the signed in account.
               </p>
             </div>
           </div>

@@ -33,15 +33,20 @@ const SettingsPage = async () => {
           user={loggedIn}
           accounts={accountsData}
           currentDefaultId={currentDefaultId}
-        />
-      </section>
-
-      <section className="w-full pt-6 pb-8">
-        <h2 className="text-20 font-bold text-gray-900 mb-4">Security</h2>
-        <div className="grid gap-6 xl:grid-cols-2">
-          <ChangePasswordForm />
-          <TwoFactorAuth />
-        </div>
+        >
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-20 font-bold text-gray-900">Security</h2>
+              <p className="mt-1 text-13 text-gray-600">
+                Manage password changes and two-factor verification.
+              </p>
+            </div>
+            <div className="grid gap-4">
+              <ChangePasswordForm />
+              <TwoFactorAuth />
+            </div>
+          </section>
+        </SettingsDashboard>
       </section>
     </section>
   );

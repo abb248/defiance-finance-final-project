@@ -18,13 +18,24 @@ const EmailAddressForm = ({ user }: EmailAddressFormProps) => {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const currentEmail = (user.email || "").trim().toLowerCase();
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasEmailChanged = Boolean(normalizedEmail) && normalizedEmail !== currentEmail;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!hasEmailChanged) {
+      setMessage({
+        type: "success",
+        text: "This email address is already active.",
+      });
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
-    const result = await updateUserEmailAddress(email);
+    const result = await updateUserEmailAddress(normalizedEmail);
     setIsSaving(false);
 
     if (!result.success) {
@@ -53,7 +64,7 @@ const EmailAddressForm = ({ user }: EmailAddressFormProps) => {
         <div>
           <h2 className="text-18 font-semibold text-gray-900">Email address</h2>
           <p className="text-13 text-gray-600">
-            Update your sign-in email. A verification step may be required.
+            Update your sign in email. A verification step may be required.
           </p>
         </div>
       </div>
@@ -69,10 +80,13 @@ const EmailAddressForm = ({ user }: EmailAddressFormProps) => {
             type="email"
           />
         </label>
+        <p className="text-12 text-gray-500">
+          Current email: <span className="font-medium">{user.email}</span>
+        </p>
 
         <button
           type="submit"
-          disabled={isSaving || !email}
+          disabled={isSaving || !hasEmailChanged}
           className="flex-center h-11 rounded-lg bg-bank-gradient px-4 text-14 font-semibold text-white shadow-form disabled:opacity-60"
         >
           {isSaving ? (
@@ -80,8 +94,10 @@ const EmailAddressForm = ({ user }: EmailAddressFormProps) => {
               <Loader2 size={16} className="mr-2 animate-spin" />
               Sending...
             </>
-          ) : (
+          ) : hasEmailChanged ? (
             "Send verification"
+          ) : (
+            "Current email"
           )}
         </button>
 

@@ -460,7 +460,7 @@ export const updateUserEmailAddress = async (newEmail: string) => {
     return {
       success: true,
       error: null,
-      message: "Verification email sent. Please confirm it before the new email becomes active.",
+      message: `Verification email sent to ${cleanEmail}. Your current email stays active until you confirm the new address.`,
     };
   } catch (error: any) {
     console.error("Email update error:", error);

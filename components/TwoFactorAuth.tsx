@@ -93,7 +93,7 @@ const TwoFactorAuth = () => {
   };
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
           <ShieldCheck size={19} />
@@ -103,14 +103,14 @@ const TwoFactorAuth = () => {
             Two-Factor Authentication
           </h2>
           <p className="text-13 text-gray-600">
-            Protect sign-ins with an authenticator app.
+            Protect sign ins with an authenticator app.
           </p>
         </div>
       </div>
       
       {step === "init" && (
         <div>
-          <p className="mb-6 text-14 text-gray-600">
+          <p className="mb-4 text-14 text-gray-600">
             Secure your account against unauthorized access by linking it with Google or Microsoft Authenticator.
           </p>
           
@@ -119,7 +119,7 @@ const TwoFactorAuth = () => {
           <button
             onClick={handleEnable2FA}
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-all disabled:bg-blue-300"
+            className="h-11 w-full rounded-lg bg-bank-gradient px-4 text-14 font-semibold text-white shadow-form disabled:opacity-60"
           >
             {loading ? "Loading..." : "Enable 2FA"}
           </button>
@@ -127,12 +127,12 @@ const TwoFactorAuth = () => {
       )}
 
       {step === "scan" && (
-        <div className="flex flex-col items-center w-full">
-          <p className="text-14 text-gray-600 text-center mb-4">
+        <div className="flex w-full flex-col items-center">
+          <p className="mb-4 text-center text-14 text-gray-600">
             Scan the QR code below with your Authenticator app.
           </p>
           
-          <div className="bg-white p-6 rounded-xl mb-6 flex justify-center w-full border border-gray-100 shadow-sm">
+          <div className="mb-4 flex w-full justify-center rounded-lg border border-gray-200 bg-gray-25 p-5">
             {qrCode.startsWith("otpauth://") ? (
               <QRCodeSVG value={qrCode} size={256} level="M" includeMargin={true} />
             ) : qrCode ? (
@@ -157,13 +157,13 @@ const TwoFactorAuth = () => {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} 
             placeholder="6-Digit Code"
-            className="w-full border border-gray-300 rounded-lg p-3 text-center text-20 tracking-widest mb-4 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            className="input-class mb-4 h-12 w-full px-3 text-center text-20 tracking-widest"
           />
 
           <button
             onClick={handleVerify}
             disabled={loading || code.length !== 6}
-            className="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-all disabled:bg-blue-300"
+            className="h-11 w-full rounded-lg bg-bank-gradient px-4 text-14 font-semibold text-white shadow-form disabled:opacity-60"
           >
             {loading ? "Verifying..." : "Verify Code"}
           </button>
@@ -172,10 +172,10 @@ const TwoFactorAuth = () => {
 
       {step === "success" && (
         <div className="text-center">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="size-8 text-green-600" />
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-success-50">
+            <CheckCircle2 className="size-7 text-success-700" />
           </div>
-          <h3 className="text-18 font-semibold text-green-700 mb-2">2FA Successfully Enabled!</h3>
+          <h3 className="mb-2 text-18 font-semibold text-success-700">2FA successfully enabled</h3>
           <p className="text-14 text-gray-500">
             Your account is now protected with bank-grade security.
           </p>
@@ -184,10 +184,10 @@ const TwoFactorAuth = () => {
 
       {step === "active" && (
         <div className="text-center">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
-            <CheckCircle2 className="size-8 text-blue-600" />
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-blue-50">
+            <CheckCircle2 className="size-7 text-blue-600" />
           </div>
-          <h3 className="text-18 font-semibold text-blue-700 mb-2">2FA is Already Active</h3>
+          <h3 className="mb-2 text-18 font-semibold text-blue-700">2FA is already active</h3>
           <p className="text-14 text-gray-500">
             Your account is currently protected by Google or Microsoft Authenticator.
           </p>

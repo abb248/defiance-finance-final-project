@@ -44,7 +44,7 @@ export const updateDefaultReceivingAccount = async (accountId: string) => {
     if (!isOwnedAccount) {
       return {
         success: false,
-        error: "Selected account does not belong to the signed-in user." as const,
+        error: "Selected account does not belong to the signed in user." as const,
       };
     }
 

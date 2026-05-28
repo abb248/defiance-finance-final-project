@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { updateUserPassword } from "@/lib/actions/user.actions";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, LockKeyhole } from "lucide-react";
 
 const ChangePasswordForm = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -15,8 +15,8 @@ const ChangePasswordForm = () => {
     e.preventDefault();
     setMessage(null);
 
-    if (newPassword.length < 6) {
-      setMessage({ type: "error", text: "Password must be at least 6 characters." });
+    if (newPassword.length < 8) {
+      setMessage({ type: "error", text: "Password must be at least 8 characters." });
       return;
     }
 
@@ -43,28 +43,38 @@ const ChangePasswordForm = () => {
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-18 font-semibold text-gray-900">Change Password</h2>
+    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <LockKeyhole size={19} />
+        </div>
+        <div>
+          <h2 className="text-18 font-semibold text-gray-900">Change password</h2>
+          <p className="text-13 text-gray-600">
+            Use a stronger password for future sign ins.
+          </p>
+        </div>
+      </div>
       
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-14 font-medium text-gray-700">New Password</label>
+          <label className="text-12 font-semibold text-gray-600">New password</label>
           <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-600 focus:outline-none"
-            placeholder="At least 6 characters"
+            className="input-class h-11 px-3 text-14"
+            placeholder="At least 8 characters"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-14 font-medium text-gray-700">Confirm New Password</label>
+          <label className="text-12 font-semibold text-gray-600">Confirm new password</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            className="input-class h-11 px-3 text-14"
             placeholder="Re-enter your password"
           />
         </div>
@@ -78,15 +88,15 @@ const ChangePasswordForm = () => {
         <Button
           type="submit"
           disabled={isLoading || !newPassword || !confirmPassword}
-          className="bg-blue-600 hover:bg-blue-700 text-white mt-2"
+          className="mt-1 h-11 rounded-lg bg-bank-gradient text-14 font-semibold text-white shadow-form"
         >
           {isLoading ? (
             <>
-              <Loader2 size={20} className="animate-spin mr-2" />
+              <Loader2 size={16} className="mr-2 animate-spin" />
               Updating...
             </>
           ) : (
-            "Update Password"
+            "Update password"
           )}
         </Button>
       </form>
