@@ -4,7 +4,7 @@ import RightSidebar from '@/components/RightSidebar';
 import TotalBalanceBox from '@/components/TotalBalanceBox';
 import { getAccount, getAccounts } from '@/lib/actions/bank.actions';
 import { getLoggedInUser } from '@/lib/actions/user.actions';
-import { sortAccountsByRecentTransactions } from '@/lib/utilsz';
+import { sortAccountsByRecentTransactions, sortTransactionsByNewest } from '@/lib/utilsz';
 import { redirect } from "next/navigation";
 
 const RECENT_TRANSACTIONS_LIMIT = 5;
@@ -56,10 +56,9 @@ const Home = async ({ searchParams: { id } }: SearchParamProps) => {
   const selectedAccountDetails =
     selectedIndex >= 0 ? accountDetailsList[selectedIndex] : accountDetailsList[0];
 
-  const recentTransactions = (selectedAccountDetails?.transactions || []).slice(
-    0,
-    RECENT_TRANSACTIONS_LIMIT
-  );
+  const recentTransactions = sortTransactionsByNewest(
+    selectedAccountDetails?.transactions || []
+  ).slice(0, RECENT_TRANSACTIONS_LIMIT);
 
   return (
     <section className="home">

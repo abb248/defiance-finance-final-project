@@ -83,6 +83,43 @@ const normalizeCategory = (category?: string) =>
 const removeSpecialCharacters = (value: string) =>
   value.replace(/[^\w\s.,'-]/g, "").replace(/\s+/g, " ").trim();
 
+const maskLongIdentifier = (value?: string | null) => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return "Not available";
+  if (cleanValue.length <= 8) return cleanValue;
+
+  return `...${cleanValue.slice(-6)}`;
+};
+
+const parseTransferDescription = (description?: string) => {
+  const parts = String(description || "")
+    .split(" - ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const getValue = (...labels: string[]) => {
+    const match = parts.find((part) =>
+      labels.some((label) => part.toLowerCase().startsWith(label.toLowerCase()))
+    );
+    if (!match) return null;
+
+    const matchedLabel = labels.find((label) =>
+      match.toLowerCase().startsWith(label.toLowerCase())
+    );
+
+    return match.slice(matchedLabel?.length || 0).trim() || null;
+  };
+
+  return {
+    type: parts[0] || "Online Transfer",
+    from: getValue("From:", "From "),
+    to: getValue("Sent to:", "Sent to "),
+    reference: getValue("Reference:", "Reference "),
+    note: getValue("Note:", "Note "),
+  };
+};
+
 const formatDate = (date?: string) => {
   if (!date) return "No date";
 
@@ -162,9 +199,14 @@ const TransactionsTable = ({
   const selectedDetails = useMemo(() => {
     if (!selectedTransaction) return null;
 
+    const transferDetails = parseTransferDescription(selectedTransaction.name);
+    const isTransfer = normalizeCategory(selectedTransaction.category) === "transfer";
+
     return {
       isDebit: getSignedAmount(selectedTransaction) < 0,
-      title: removeSpecialCharacters(selectedTransaction.name),
+      title: isTransfer
+        ? transferDetails.type
+        : removeSpecialCharacters(selectedTransaction.name),
       amount: formatTransactionAmount(selectedTransaction),
       type: getTransactionType(selectedTransaction),
       date: formatDate(selectedTransaction.date),
@@ -173,7 +215,9 @@ const TransactionsTable = ({
       status: selectedTransaction.status || "Unknown",
       accountId: selectedTransaction.accountId || "Not available",
       currency: selectedTransaction.currencyCode || "USD",
-      reference: selectedTransaction.id,
+      reference: transferDetails.reference || selectedTransaction.id,
+      transferDetails,
+      isTransfer,
     };
   }, [selectedTransaction]);
 
@@ -243,7 +287,9 @@ const TransactionsTable = ({
                 >
                   <td className="max-w-[250px] px-4 py-4 pr-10">
                     <p className="truncate text-14 font-semibold text-gray-700">
-                      {removeSpecialCharacters(transaction.name)}
+                      {normalizeCategory(transaction.category) === "transfer"
+                        ? parseTransferDescription(transaction.name).type
+                        : removeSpecialCharacters(transaction.name)}
                     </p>
                     <p className="mt-1 text-12 font-medium text-blue-600">
                       View details
@@ -357,8 +403,32 @@ const TransactionsTable = ({
                   <DetailRow label="Channel" value={selectedDetails.channel} />
                   <DetailRow label="Date" value={selectedDetails.date} />
                   <DetailRow label="Currency" value={selectedDetails.currency} />
-                  <DetailRow label="Account ID" value={selectedDetails.accountId} />
+                  <DetailRow
+                    label="Account ID"
+                    value={maskLongIdentifier(selectedDetails.accountId)}
+                  />
                 </div>
+
+                {selectedDetails.isTransfer ? (
+                  <div className="rounded-lg border border-blue-100 bg-blue-25 p-4">
+                    <p className="text-12 font-semibold uppercase text-blue-700">
+                      Transfer path
+                    </p>
+                    <div className="mt-3 grid gap-3">
+                      <DetailRow
+                        label="From account"
+                        value={maskLongIdentifier(selectedDetails.transferDetails.from)}
+                      />
+                      <DetailRow
+                        label="Sent to"
+                        value={maskLongIdentifier(selectedDetails.transferDetails.to)}
+                      />
+                      {selectedDetails.transferDetails.note ? (
+                        <DetailRow label="Note" value={selectedDetails.transferDetails.note} />
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="mb-3 flex items-center gap-2 text-gray-600">

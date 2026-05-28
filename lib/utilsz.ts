@@ -104,6 +104,14 @@ export const getLatestTransactionTime = (transactions: Transaction[] = []) =>
     return time > latest ? time : latest;
   }, 0);
 
+export const sortTransactionsByNewest = (transactions: Transaction[] = []) =>
+  [...transactions].sort((a, b) => {
+    const timeA = new Date(a.date || 0).getTime() || 0;
+    const timeB = new Date(b.date || 0).getTime() || 0;
+
+    return timeB - timeA;
+  });
+
 export const sortAccountsByRecentTransactions = (
   accounts: Account[],
   transactionsByAccountId: Record<string, Transaction[]>

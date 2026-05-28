@@ -4,6 +4,7 @@ import BankInfo from "./BankInfo";
 import BankTabItem from "./BankTabItem";
 import HomeAccountMoreSelect from "./HomeAccountMoreSelect";
 import TransactionsTable from "./TransactionsTable";
+import { sortTransactionsByNewest } from "@/lib/utilsz";
 
 const FEATURED_ACCOUNTS_COUNT = 3;
 const RECENT_TRANSACTIONS_LIMIT = 5;
@@ -29,7 +30,10 @@ const RecentTransactions = ({
     (account) => !featuredIds.has(account.supabaseItemId)
   );
 
-  const limitedTransactions = transactions.slice(0, RECENT_TRANSACTIONS_LIMIT);
+  const limitedTransactions = sortTransactionsByNewest(transactions).slice(
+    0,
+    RECENT_TRANSACTIONS_LIMIT
+  );
 
   return (
     <section className="recent-transactions">
