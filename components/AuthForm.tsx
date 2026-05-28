@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -31,16 +31,6 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
 
   const formSchema = authFormSchema(type);
   const isSignIn = type === "sign-in";
-
-  useEffect(() => {
-    if (type !== "sign-up" || !user) return;
-
-    const timer = window.setTimeout(() => {
-      router.push("/sign-in");
-    }, 1800);
-
-    return () => window.clearTimeout(timer);
-  }, [router, type, user]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -161,7 +151,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
           </h1>
           <p className="mt-2 text-15 text-gray-600">
             {user
-              ? "Your account is ready. Redirecting you to sign in."
+              ? "Your account is ready. You can go to sign in when you are ready."
               : isSignIn
               ? "Welcome back. Enter your account details."
               : "Fill in the details below to start using your dashboard."}
@@ -201,15 +191,30 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
           {formError ? <p className="text-13 font-medium text-red-600">{formError}</p> : null}
         </form>
       ) : user ? (
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-success-100 bg-success-25 px-5 py-8 text-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-success-50">
-            <CheckCircle2 className="size-7 text-success-700" />
+        <div
+          className="flex flex-col items-center gap-5 rounded-lg border border-success-100 bg-success-25 px-5 py-8 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex size-16 items-center justify-center rounded-full bg-white shadow-sm">
+            <CheckCircle2 className="size-8 text-success-700" />
           </div>
           <div>
             <h2 className="text-20 font-bold text-gray-900">Account created</h2>
             <p className="mt-2 text-14 text-gray-600">
-              Your account has been created successfully.
+              Your account has been created successfully. Please continue to sign in when you are ready.
             </p>
+          </div>
+          <div className="w-full rounded-lg border border-success-100 bg-white px-4 py-3 text-left">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="size-5 shrink-0 text-success-700" />
+              <div>
+                <p className="text-13 font-semibold text-gray-900">Registration complete</p>
+                <p className="text-12 text-gray-600">
+                  We saved your account details and prepared the sign in step.
+                </p>
+              </div>
+            </div>
           </div>
           <Button
             type="button"
@@ -223,8 +228,10 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
         <Form {...form}>
           <form
             method="POST"
-            onSubmit={form.handleSubmit(onSubmit, () => {
-              setFormError("Please correct the errors in the form.");
+            noValidate
+            onSubmit={form.handleSubmit(onSubmit, (errors) => {
+              const firstError = Object.values(errors)[0] as { message?: string } | undefined;
+              setFormError(firstError?.message || "Please correct the highlighted fields.");
             })}
             className="space-y-5 [&_.form-label]:!text-gray-700 [&_.input-class]:h-11 [&_.input-class]:px-3 [&_.input-class]:text-14"
           >
@@ -275,8 +282,8 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
                 <CustomInput
                   control={form.control}
                   name="ssn"
-                  label="SSN"
-                  placeholder="ex: 1234"
+                  label="SSN last 4 digits"
+                  placeholder="1234"
                 />
                 <CustomInput
                   control={form.control}

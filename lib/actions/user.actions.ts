@@ -3,6 +3,7 @@
 import { createAdminClient, createSessionClient } from "@/lib/supabase/server";
 import { createStripeCustomer } from "./stripe.actions";
 import { revalidatePath } from "next/cache";
+import { authFormSchema } from "@/lib/utils";
 
 // --- TİP TANIMLAMALARI (Hataları önlemek için) ---
 interface SignUpParams {
@@ -26,44 +27,110 @@ type ActionResult<T> = { user: T | null; error: string | null };
 
 // --- FONKSİYONLAR ---
 
+const getFriendlySignUpError = (error: any) => {
+  const message = String(error?.message || error || "");
+  const lowerMessage = message.toLowerCase();
+
+  if (
+    lowerMessage.includes("already registered") ||
+    lowerMessage.includes("already exists") ||
+    lowerMessage.includes("duplicate") ||
+    lowerMessage.includes("unique")
+  ) {
+    return "This email is already registered. Please sign in or use another email address.";
+  }
+
+  if (lowerMessage.includes("password")) {
+    return "Password could not be accepted. Please use at least 8 characters.";
+  }
+
+  if (lowerMessage.includes("email")) {
+    return "Please enter a valid email address.";
+  }
+
+  return message || "Account could not be created. Please check the form and try again.";
+};
+
+const removeAuthUserIfCreated = async (userId?: string | null) => {
+  if (!userId) return;
+
+  try {
+    const admin = await createAdminClient();
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("Could not clean up failed sign up user:", error);
+    }
+  } catch (cleanupError) {
+    console.error("Sign up cleanup failed:", cleanupError);
+  }
+};
+
 // 1. KAYIT OL
-export const signUp = async ({ password, ...userData }: SignUpParams): Promise<ActionResult<any>> => {
-  const { email } = userData;
+export const signUp = async ({
+  password,
+  ...userData
+}: SignUpParams): Promise<ActionResult<any>> => {
+  const validation = authFormSchema("sign-up").safeParse({
+    ...userData,
+    password,
+  });
+
+  if (!validation.success) {
+    return {
+      user: null,
+      error: validation.error.errors[0]?.message || "Please check the form and try again.",
+    };
+  }
+
+  const cleanData = validation.data as Required<SignUpParams>;
+  let createdAuthUserId: string | null = null;
 
   try {
     const supabase = await createSessionClient();
 
     // ADIM A: Supabase Auth kaydı
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
+      email: cleanData.email,
+      password: cleanData.password,
     });
     
     if (authError) throw authError;
+    if (!authData.user?.id) {
+      return { user: null, error: "Account could not be created. Please try again." };
+    }
+
+    if (Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+      return {
+        user: null,
+        error: "This email is already registered. Please sign in or use another email address.",
+      };
+    }
+
+    createdAuthUserId = authData.user.id;
 
     // YENİ ADIM: STRIPE MÜŞTERİSİ OLUŞTURUYORUZ!
     // Supabase kaydı başarılıysa, Stripe'da bu kullanıcı için bir cüzdan açıyoruz
     const stripeCustomer = await createStripeCustomer({
-      name: `${userData.firstName} ${userData.lastName}`,
-      email: userData.email,
+      name: `${cleanData.firstName} ${cleanData.lastName}`,
+      email: cleanData.email,
     });
 
     // ADIM B: 'users' tablosuna detayları ekleme
     const admin = await createAdminClient();
     const baseRow = {
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
+      email: cleanData.email,
+      firstName: cleanData.firstName,
+      lastName: cleanData.lastName,
       // farklı isimlendirmeler için hepsini payload'a koyup
       // DB'nin tanımadığı kolonları hata geldikçe çıkar
-      postalCode: userData.postalCode,
-      postal_code: userData.postalCode,
-      dateOfBirth: userData.dateOfBirth,
-      date_of_birth: userData.dateOfBirth,
-      ssn: userData.ssn,
-      userID: authData.user?.id, 
-      userId: authData.user?.id, 
-      user_id: authData.user?.id,
+      postalCode: cleanData.postalCode,
+      postal_code: cleanData.postalCode,
+      dateOfBirth: cleanData.dateOfBirth,
+      date_of_birth: cleanData.dateOfBirth,
+      ssn: cleanData.ssn,
+      userID: authData.user.id,
+      userId: authData.user.id,
+      user_id: authData.user.id,
       // 'pending' YERİNE STRIPE BİLGİLERİNİ GİRİYORUZ!
       paymentCustomerId: stripeCustomer.id,
       payment_customer_id: stripeCustomer.id,
@@ -74,10 +141,10 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     // adres/şehir isimleri projeden projeye değişebiliyor, o yüzden ikisini de ekliyoruz
     let row: Record<string, any> = {
       ...baseRow,
-      address: userData.address,
-      address1: userData.address,
-      city: userData.state,
-      state: userData.state,
+      address: cleanData.address,
+      address1: cleanData.address,
+      city: cleanData.state,
+      state: cleanData.state,
     };
 
     // Hata mesajından eksik kolonu parse edip ona göre denemek için bir fonksiyon
@@ -115,18 +182,16 @@ export const signUp = async ({ password, ...userData }: SignUpParams): Promise<A
     }
 
     if (dbError) throw dbError;
+    createdAuthUserId = null;
 
     return { user: JSON.parse(JSON.stringify(authData.user)), error: null };
 
   } catch (error: any) {
-    console.error('Error during sign up:', error);
-    const message =
-      error?.message ||
-      (typeof error === 'string' ? error : null) ||
-      'An error occurred during sign up.';
-    return { user: null, error: message };
+    await removeAuthUserIfCreated(createdAuthUserId);
+    console.error("Error during sign up:", error);
+    return { user: null, error: getFriendlySignUpError(error) };
   }
-}
+};
 
 
 // 2. GİRİŞ YAP
