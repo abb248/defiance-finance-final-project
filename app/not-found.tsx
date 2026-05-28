@@ -8,11 +8,11 @@ export default function NotFound() {
       <div className="mx-auto max-w-max text-center">
         <div className="mb-8 flex justify-center">
           <Image
-            src="/icons/logo.svg"
+            src="/brand/defiance-logo.jpg"
             width={80}
             height={80}
             alt="Defiance Finance logo"
-            className="opacity-80 drop-shadow-md"
+            className="rounded-full object-contain opacity-90 drop-shadow-md"
           />
         </div>
         <p className="text-sm font-semibold tracking-wide text-blue-600 uppercase">404 error</p>

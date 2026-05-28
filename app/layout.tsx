@@ -19,7 +19,7 @@ export function generateMetadata(): Metadata {
     title: "Defiance Finance",
     description: "Defiance Finance is a modern banking and financial management platform for everyone.",
     icons: {
-      icon: '/icons/logo.svg'
+      icon: "/brand/defiance-logo.jpg",
     },
     other: {
       ...Sentry.getTraceData(),

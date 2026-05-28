@@ -44,10 +44,11 @@ const MobileNav = ({ user }: MobileNavProps) => {
             className="flex cursor-pointer items-center gap-1 px-4"
           >
             <Image
-              src="/icons/logo.svg"
-              width={34}
-              height={34}
+              src="/brand/defiance-logo.jpg"
+              width={40}
+              height={40}
               alt="Defiance Finance logo"
+              className="size-10 rounded-full object-contain"
             />
             <h1 className="text-26 font-ibm-plex-serif font-bold text-black-1">
               De-Fi
