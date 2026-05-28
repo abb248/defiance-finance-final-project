@@ -1,9 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { enroll2FA, challenge2FA, verify2FA, getMfaStatus } from "@/lib/actions/user.actions";
+
+const getSafeQrImageSource = (value?: string) => {
+  const trimmed = String(value || "").trim();
+  return /^data:image\/(png|jpe?g|webp|svg\+xml);/i.test(trimmed) ? trimmed : "";
+};
 
 const TwoFactorAuth = () => {
   const [qrCode, setQrCode] = useState<string>("");
@@ -28,7 +34,6 @@ const TwoFactorAuth = () => {
     setError("");
     try {
       const data = await enroll2FA();
-      console.log("enroll2FA response:", JSON.stringify(data, null, 2));
       
       if (!data) {
         setError("Server returned empty response.");
@@ -42,12 +47,13 @@ const TwoFactorAuth = () => {
       }
 
       // Try to extract QR/URI from various possible response shapes
-      const uri = data.totp?.uri || data.uri || data.totp?.qr_code || data.qr_code;
+      const uri = data.totp?.uri || data.uri;
+      const qrImage = getSafeQrImageSource(data.totp?.qr_code || data.qr_code);
       const id = data.id;
 
-      if (id && uri) {
+      if (id && (uri || qrImage)) {
         setFactorId(id);
-        setQrCode(uri); 
+        setQrCode(uri || qrImage);
         setStep("scan");
       } else {
         setError(`Unexpected response format. Keys: ${Object.keys(data).join(', ')}`);
@@ -129,11 +135,17 @@ const TwoFactorAuth = () => {
           <div className="bg-white p-6 rounded-xl mb-6 flex justify-center w-full border border-gray-100 shadow-sm">
             {qrCode.startsWith("otpauth://") ? (
               <QRCodeSVG value={qrCode} size={256} level="M" includeMargin={true} />
-            ) : (
-              <div 
-                className="[&>svg]:w-64 [&>svg]:h-64 [&>svg]:max-w-full"
-                dangerouslySetInnerHTML={{ __html: qrCode.replace(/^data:image\/svg\+xml;utf-8,/, '') }} 
+            ) : qrCode ? (
+              <Image
+                src={qrCode}
+                alt="Two-factor authentication QR code"
+                width={256}
+                height={256}
+                unoptimized
+                className="size-64 max-w-full"
               />
+            ) : (
+              <p className="text-14 text-red-500">QR code could not be displayed.</p>
             )}
           </div>
 

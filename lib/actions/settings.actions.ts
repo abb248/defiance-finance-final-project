@@ -1,12 +1,18 @@
 "use server";
 
-import { createAdminClient, createSessionClient } from "@/lib/supabase/server";
+import { getAccounts } from "@/lib/actions/bank.actions";
+import { createSessionClient } from "@/lib/supabase/server";
+import { getAccountIdentifier } from "@/lib/utilsz";
 
-const isMissingColumnError = (error: any) => {
-  const msg = String(error?.message || "");
-  const code = String(error?.code || "");
-  return code === "42703" || msg.includes("does not exist") || msg.includes("Could not find");
-};
+const accountBelongsToUser = (account: Account, accountId: string) =>
+  [
+    getAccountIdentifier(account),
+    account.supabaseItemId,
+    account.shareableId,
+    account.id,
+  ]
+    .map((id) => String(id || "").trim())
+    .includes(accountId);
 
 export const updateDefaultReceivingAccount = async (accountId: string) => {
   const normalizedAccountId = String(accountId || "").trim();
@@ -23,6 +29,23 @@ export const updateDefaultReceivingAccount = async (accountId: string) => {
 
     if (userError || !user) {
       return { success: false, error: "Not authenticated." as const };
+    }
+
+    if (!user.email) {
+      return { success: false, error: "User email is unavailable." as const };
+    }
+
+    const accounts = await getAccounts({ email: user.email });
+    const accountsData = accounts?.data || [];
+    const isOwnedAccount = accountsData.some((account: Account) =>
+      accountBelongsToUser(account, normalizedAccountId)
+    );
+
+    if (!isOwnedAccount) {
+      return {
+        success: false,
+        error: "Selected account does not belong to the signed-in user." as const,
+      };
     }
 
     const { error: updateError } = await supabase.auth.updateUser({
