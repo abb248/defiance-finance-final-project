@@ -2,6 +2,7 @@
 
 import Stripe from "stripe";
 import { parseStringify } from "../utils";
+import { validateTransferAmount } from "@/lib/transfer-limits";
 
 // Stripe'ı Secret Key ile başlatıyoruz
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -29,6 +30,12 @@ export const createStripeCustomer = async ({ name, email }: { name: string, emai
 // 2. INITIATE MONEY TRANSFER (PAYMENT)
 // Will run when user clicks "Transfer Funds"
 export const createTransfer = async ({ amount, memo, currency = 'USD' }: { amount: number, memo: string, currency?: string }) => {
+  const transferAmountValidation = validateTransferAmount(amount, currency);
+
+  if (!transferAmountValidation.allowed) {
+    throw new Error(transferAmountValidation.message || "Transfer amount is outside the allowed limit.");
+  }
+
   try {
     // IMPORTANT: Stripe processes amounts in cents. (e.g. 10 USD = 1000 cents)
     // So we multiply the amount by 100.

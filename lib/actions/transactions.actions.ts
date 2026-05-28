@@ -1,6 +1,7 @@
 "use server";
 
 import { getAccounts } from "@/lib/actions/bank.actions";
+import { validateTransferAmount } from "@/lib/transfer-limits";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -10,6 +11,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const createTransaction = async (transactionData: TransferTransactionData) => {
   try {
+    const currency = transactionData.currency || "USD";
+    const transferAmountValidation = validateTransferAmount(transactionData.amount, currency);
+
+    if (!transferAmountValidation.allowed) {
+      throw new Error(transferAmountValidation.message || "Transfer amount is outside the allowed limit.");
+    }
+
     const description = [
       transactionData.name || "Online Transfer",
       `From: ${transactionData.senderId}`,
@@ -25,7 +33,7 @@ export const createTransaction = async (transactionData: TransferTransactionData
       .insert([
         {
           amount: transactionData.amount,
-          currency: transactionData.currency || "TRY",
+          currency,
           status: "success",
           type: "transfer",
           recipient_email: transactionData.email,

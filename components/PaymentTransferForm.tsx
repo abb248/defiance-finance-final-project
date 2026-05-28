@@ -14,6 +14,14 @@ import { Elements } from '@stripe/react-stripe-js'
 import StripeCheckout from './StripeCheckout'
 import { getRecipientAccounts } from "@/lib/actions/bank.actions";
 import { createTransaction, verifyRecipient } from "@/lib/actions/transactions.actions";
+import {
+  SUPPORTED_TRANSFER_CURRENCIES,
+  formatTransferAmount,
+  getTransferLimit,
+  isLargeTransferAmount,
+  normalizeTransferCurrency,
+  validateTransferAmount,
+} from "@/lib/transfer-limits";
 import { formatAmount, getAccountIdentifier } from "@/lib/utilsz";
 import { ArrowLeft, CheckCircle2, Copy, ShieldAlert, Star, Trash2 } from 'lucide-react'
 
@@ -22,14 +30,30 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 const paymentTransferSchema = z.object({
   senderBankId: z.string().min(1, 'Please select a source bank.'),
-  note: z.string().optional(),
+  note: z.string().max(120, 'Transfer note must be 120 characters or less.').optional(),
   email: z.string().email('Please enter a valid email address.'),
   shareableId: z.string().min(1, 'Please enter the shareable ID.'),
   amount: z.string().min(1, 'Please enter an amount.').refine(
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     'Amount must be greater than 0.'
   ),
-  currency: z.string().min(1, 'Please select a currency.'),
+  currency: z.enum(SUPPORTED_TRANSFER_CURRENCIES, {
+    errorMap: () => ({ message: 'Please select a supported currency.' }),
+  }),
+}).superRefine((data, ctx) => {
+  const amount = Number(data.amount);
+
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const transferAmountValidation = validateTransferAmount(amount, data.currency);
+
+  if (!transferAmountValidation.allowed) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amount"],
+      message: transferAmountValidation.message || "Transfer amount is outside the allowed limit.",
+    });
+  }
 })
 
 type PaymentTransferFormValues = z.infer<typeof paymentTransferSchema>
@@ -100,6 +124,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
   const [favoriteRecipients, setFavoriteRecipients] = useState<FavoriteRecipient[]>([])
   const [reviewTransfer, setReviewTransfer] = useState<TransferReview | null>(null)
   const [saveAsFavorite, setSaveAsFavorite] = useState(true)
+  const [largeTransferAcknowledged, setLargeTransferAcknowledged] = useState(false)
   const [transferReceipt, setTransferReceipt] = useState<TransferReceipt | null>(null)
 
   const form = useForm<PaymentTransferFormValues>({
@@ -116,7 +141,17 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
 
   const recipientEmail = form.watch('email')
   const senderBankId = form.watch('senderBankId')
+  const selectedCurrency = form.watch('currency')
+  const enteredAmount = form.watch('amount')
   const { setValue, getValues } = form
+  const transferLimit = getTransferLimit(selectedCurrency)
+  const enteredAmountNumber = Number(enteredAmount)
+  const enteredAmountIsLarge = isLargeTransferAmount(enteredAmountNumber, selectedCurrency)
+  const enteredAmountExceedsLimit =
+    Number.isFinite(enteredAmountNumber) && enteredAmountNumber > transferLimit.maxAmount
+  const reviewTransferIsLarge = reviewTransfer
+    ? isLargeTransferAmount(reviewTransfer.amountNumber, reviewTransfer.currency)
+    : false
 
   const findAccountName = React.useCallback(
     (accountId: string, sourceAccounts: BankAccount[] = accounts) => {
@@ -241,6 +276,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
     setTransferAmount(0)
     setPendingTransfer(null)
     setReviewTransfer(null)
+    setLargeTransferAcknowledged(false)
   }
 
   const handleNewTransfer = () => {
@@ -273,6 +309,37 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
         return;
       }
 
+      const amount = parseFloat(data.amount)
+      const transferAmountValidation = validateTransferAmount(amount, data.currency)
+
+      if (!transferAmountValidation.allowed) {
+        setTransferResult({
+          success: false,
+          message: transferAmountValidation.message || "Transfer amount is outside the allowed limit.",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      const sourceAccount = accounts.find(
+        (account) => getAccountIdentifier(account) === data.senderBankId
+      )
+
+      const sourceCurrency = sourceAccount?.currencyCode?.toUpperCase()
+
+      if (
+        sourceAccount &&
+        (!sourceCurrency || sourceCurrency === data.currency) &&
+        amount > Number(sourceAccount.currentBalance || 0)
+      ) {
+        setTransferResult({
+          success: false,
+          message: `Amount is higher than the selected account balance of ${formatTransferAmount(sourceAccount.currentBalance || 0, data.currency)}.`,
+        })
+        setIsLoading(false)
+        return
+      }
+
       const isMatch = await verifyRecipient(data.shareableId, data.email);
       
       if (!isMatch) {
@@ -284,10 +351,10 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
         return; 
       }
 
-      const amount = parseFloat(data.amount)
       const favoriteExists = isFavoriteRecipient(data.email, data.shareableId)
 
       setSaveAsFavorite(!favoriteExists)
+      setLargeTransferAcknowledged(false)
       setReviewTransfer({
         ...data,
         amountNumber: amount,
@@ -313,6 +380,21 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
     setTransferResult(null)
 
     try {
+      const transferAmountValidation = validateTransferAmount(
+        reviewTransfer.amountNumber,
+        reviewTransfer.currency
+      )
+
+      if (!transferAmountValidation.allowed) {
+        throw new Error(
+          transferAmountValidation.message || "Transfer amount is outside the allowed limit."
+        )
+      }
+
+      if (transferAmountValidation.isLarge && !largeTransferAcknowledged) {
+        throw new Error("Please confirm that you reviewed this large transfer before continuing.")
+      }
+
       const memoParts = [
         `Transfer to: ${reviewTransfer.email}`,
         `Reference: ${reviewTransfer.referenceNumber}`,
@@ -412,7 +494,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
               email: '',
               shareableId: '',
               amount: '',
-              currency: pendingTransfer.currency || 'USD',
+              currency: normalizeTransferCurrency(pendingTransfer.currency),
             })
           }}
           onCancel={() => {
@@ -557,6 +639,19 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
                 <p className="break-all text-12 text-gray-500">{reviewTransfer.shareableId}</p>
               </div>
             </div>
+            {reviewTransferIsLarge && (
+              <label className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-13 text-amber-900">
+                <input
+                  type="checkbox"
+                  checked={largeTransferAcknowledged}
+                  onChange={(event) => setLargeTransferAcknowledged(event.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  This is a large transfer. I reviewed the recipient, amount, currency, and reference number before continuing.
+                </span>
+              </label>
+            )}
             {!reviewTransfer.isFavoriteRecipient && (
               <label className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-13 text-amber-800">
                 <input
@@ -582,7 +677,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
               </Button>
               <Button
                 type="button"
-                disabled={isLoading}
+                disabled={isLoading || (reviewTransferIsLarge && !largeTransferAcknowledged)}
                 onClick={handleConfirmTransfer}
                 className="payment-transfer_btn w-full"
               >
@@ -845,10 +940,36 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
                       type="number"
                       step="0.01"
                       min="0.01"
+                      max={transferLimit.maxAmount}
                       {...field}
                       id="transfer-amount"
                     />
                   </FormControl>
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-12 text-gray-600">
+                    <p>
+                      Single transfer limit:{" "}
+                      <span className="font-semibold text-gray-800">
+                        {formatTransferAmount(transferLimit.maxAmount, transferLimit.currency)}
+                      </span>
+                    </p>
+                    <p>
+                      Large transfer review starts at{" "}
+                      <span className="font-semibold text-gray-800">
+                        {formatTransferAmount(transferLimit.warningAmount, transferLimit.currency)}
+                      </span>
+                      .
+                    </p>
+                  </div>
+                  {enteredAmountIsLarge && (
+                    <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-12 font-medium text-amber-800">
+                      This amount will require one extra confirmation on the review step.
+                    </div>
+                  )}
+                  {enteredAmountExceedsLimit && (
+                    <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-12 font-medium text-red-700">
+                      This is above the single transfer limit for {transferLimit.currency}.
+                    </div>
+                  )}
                   <FormMessage className="form-message mt-2" />
                 </div>
               </div>
@@ -859,7 +980,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
           <div className="payment-transfer_btn-box">
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || enteredAmountExceedsLimit}
               className="payment-transfer_btn"
               id="transfer-funds-btn"
             >
@@ -871,6 +992,8 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
                   </svg>
                   Processing...
                 </div>
+              ) : enteredAmountExceedsLimit ? (
+                'Lower amount to continue'
               ) : (
                 'Review Transfer'
               )}
