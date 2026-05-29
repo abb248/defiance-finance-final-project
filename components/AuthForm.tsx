@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -129,10 +129,10 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
   };
 
   return (
-    <section className="w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="auth-card w-full rounded-2xl border border-blue-200/70 bg-white/85 p-6 text-[#111827] shadow-[0_24px_70px_rgba(15,82,140,0.16)] backdrop-blur-xl sm:p-8">
       <header className="mb-7 flex flex-col gap-6">
         <Link href="/" className="flex w-fit items-center gap-3">
-          <span className="flex size-14 items-center justify-center rounded-full border border-gray-200 bg-white p-1.5 shadow-sm">
+          <span className="flex size-14 items-center justify-center rounded-full border border-blue-100 bg-white/90 p-1.5 shadow-sm shadow-blue-900/5">
             <Image
               src="/brand/defiance-logo.jpg"
               width={44}
@@ -142,19 +142,19 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
               priority
             />
           </span>
-          <span className="text-24 font-bold text-gray-900">Defiance Finance</span>
+          <span className="text-24 font-bold text-[#111827]">Defiance Finance</span>
         </Link>
 
         <div>
-          <h1 className="text-30 font-semibold text-gray-900">
+          <h1 className="text-30 font-semibold text-[#111827]">
             {user ? "Account created" : isSignIn ? "Sign in" : "Create account"}
           </h1>
-          <p className="mt-2 text-15 text-gray-600">
+          <p className="mt-2 text-15 text-[#4B5563]">
             {user
               ? "Your account is ready. You can go to sign in when you are ready."
               : isSignIn
-              ? "Welcome back. Enter your account details."
-              : "Fill in the details below to start using your dashboard."}
+              ? "Welcome back. Open your shared money view."
+              : "Create your account to gather balances, transfers, and everyday money tracking."}
           </p>
         </div>
       </header>
@@ -233,7 +233,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
               const firstError = Object.values(errors)[0] as { message?: string } | undefined;
               setFormError(firstError?.message || "Please correct the highlighted fields.");
             })}
-            className="space-y-5 [&_.form-label]:!text-gray-700 [&_.input-class]:h-11 [&_.input-class]:px-3 [&_.input-class]:text-14"
+          className="space-y-5 [&_.form-label]:!text-[#23415F] [&_.input-class]:h-12 [&_.input-class]:rounded-xl [&_.input-class]:px-4 [&_.input-class]:text-14 [&_input]:!border-[#B9D7F0] [&_input]:!bg-[#F8FCFF]/90 [&_input]:!text-[#101828] [&_input]:shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] [&_input]:placeholder:!text-[#6B7F95] [&_input:focus]:!border-[#60A5FA] [&_input:focus]:!ring-4 [&_input:focus]:!ring-blue-100"
           >
             {type === "sign-up" ? (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -303,7 +303,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="h-12 w-full rounded-lg bg-bank-gradient text-15 font-semibold text-white shadow-form"
+              className="h-12 w-full rounded-xl bg-gradient-to-r from-[#0F5EA8] via-[#1684D8] to-[#22A7E8] text-15 font-semibold text-white shadow-[0_14px_28px_rgba(21,116,196,0.28)] transition hover:from-[#0B4E92] hover:via-[#0875C4] hover:to-[#1595D6]"
             >
               {isLoading ? (
                 <>
@@ -318,17 +318,22 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
             </Button>
 
             {formError ? <p className="text-13 font-medium text-red-600">{formError}</p> : null}
+
+            <div className="flex items-center justify-center gap-2 rounded-full border border-blue-100 bg-white/55 px-3 py-2 text-12 font-medium text-[#315A7C]">
+              <LockKeyhole className="size-4 text-[#1684D8]" />
+              <span>Bank level security for your daily money hub</span>
+            </div>
           </form>
         </Form>
       )}
 
       <footer className="mt-6 flex justify-center gap-1 text-14">
-        <p className="text-gray-600">
+        <p className="text-[#4B5563]">
           {isSignIn ? "Don't have an account?" : "Already have an account?"}
         </p>
         <Link
           href={isSignIn ? "/sign-up" : "/sign-in"}
-          className="font-semibold text-blue-700 hover:text-blue-800"
+          className="font-semibold text-[#175CD3] hover:text-[#1849A9]"
         >
           {isSignIn ? "Sign up" : "Sign in"}
         </Link>
