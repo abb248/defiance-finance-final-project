@@ -2,6 +2,7 @@
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { convertAmount } from "@/lib/utilsz";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -9,7 +10,9 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DoughnutChart = ({ accounts }: DoughnutChartProps) => {
   const accountNames = accounts.map((a) => a.name);
-  const balances = accounts.map((a) => a.currentBalance)
+  const balances = accounts.map((a) =>
+    convertAmount(Number(a.currentBalance) || 0, a.currencyCode || "USD", "USD")
+  )
 
   const data = {
     datasets: [

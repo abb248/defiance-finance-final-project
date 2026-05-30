@@ -22,7 +22,7 @@ import {
   normalizeTransferCurrency,
   validateTransferAmount,
 } from "@/lib/transfer-limits";
-import { formatAmount, getAccountIdentifier } from "@/lib/utilsz";
+import { convertAmount, formatAmount, getAccountIdentifier } from "@/lib/utilsz";
 import { ArrowLeft, CheckCircle2, Copy, ShieldAlert, Star, Trash2 } from 'lucide-react'
 
 
@@ -327,14 +327,18 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
 
       const sourceCurrency = sourceAccount?.currencyCode?.toUpperCase()
 
-      if (
-        sourceAccount &&
-        (!sourceCurrency || sourceCurrency === data.currency) &&
-        amount > Number(sourceAccount.currentBalance || 0)
-      ) {
+      const sourceBalanceInTransferCurrency = sourceAccount
+        ? convertAmount(
+            Number(sourceAccount.currentBalance) || 0,
+            sourceCurrency || data.currency,
+            data.currency
+          )
+        : 0
+
+      if (sourceAccount && amount > sourceBalanceInTransferCurrency) {
         setTransferResult({
           success: false,
-          message: `Amount is higher than the selected account balance of ${formatTransferAmount(sourceAccount.currentBalance || 0, data.currency)}.`,
+          message: `Amount is higher than the selected account balance of ${formatTransferAmount(sourceBalanceInTransferCurrency, data.currency)}.`,
         })
         setIsLoading(false)
         return

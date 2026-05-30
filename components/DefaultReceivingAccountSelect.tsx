@@ -167,7 +167,10 @@ const DefaultReceivingAccountSelect = ({
                     </p>
                     <p className="truncate text-12 text-gray-600">
                       {account.bankName || account.subtype || "Account"} -{" "}
-                      <FormattedAmount amount={account.currentBalance || 0} />
+                      <FormattedAmount
+                        amount={account.currentBalance || 0}
+                        sourceCurrency={account.currencyCode}
+                      />
                     </p>
                     <p className="truncate text-12 text-gray-500">ID: {id}</p>
                   </div>

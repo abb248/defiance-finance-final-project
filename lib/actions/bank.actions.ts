@@ -1,6 +1,7 @@
 "use server";
 
 import { createSaltEdgeCustomer } from "@/lib/actions/saltedge.actions";
+import { convertAmount } from "@/lib/utilsz";
 import { createClient } from "@supabase/supabase-js";
 import { cache } from "react";
 
@@ -216,7 +217,13 @@ export const getAccounts = cache(async ({ email }: { email: string }) => {
 
   const totalBanks = new Set(connections.map((connection: any) => String(connection?.id))).size;
   const totalCurrentBalance = mapped.reduce(
-    (sum: number, account: any) => sum + (Number(account?.currentBalance) || 0),
+    (sum: number, account: any) =>
+      sum +
+      convertAmount(
+        Number(account?.currentBalance) || 0,
+        account?.currencyCode || "USD",
+        "USD"
+      ),
     0
   );
 

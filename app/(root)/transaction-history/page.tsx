@@ -5,7 +5,8 @@ import TransactionFilters from "@/components/TransactionFilters";
 import Pagination from "@/components/Pagination";
 import TransactionsTable from "@/components/TransactionsTable";
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
-import { getLoggedInUser } from "@/lib/actions/user.actions";
+import { getLoggedInUser } from "@/lib/actions/user.actions";
+import { convertAmount } from "@/lib/utilsz";
 import { redirect } from "next/navigation";
 
 const ROWS_PER_PAGE = 10;
@@ -19,6 +20,13 @@ const getSignedAmount = (transaction: Transaction) => {
   const amount = Math.abs(Number(transaction.amount) || 0);
   return transaction.type === "debit" ? -amount : amount;
 };
+
+const getSignedAmountInUsd = (transaction: Transaction) =>
+  convertAmount(
+    getSignedAmount(transaction),
+    transaction.currencyCode || "USD",
+    "USD"
+  );
 
 const normalizeValue = (value?: string) =>
   (value || "").toLowerCase().replace(/_/g, " ").trim();
@@ -132,12 +140,13 @@ const getTransactionTotals = (transactions: Transaction[]) =>
   transactions.reduce(
     (totals, transaction) => {
       const signedAmount = getSignedAmount(transaction);
+      const signedAmountInUsd = getSignedAmountInUsd(transaction);
       if (signedAmount < 0) {
-        totals.expense += Math.abs(signedAmount);
+        totals.expense += Math.abs(signedAmountInUsd);
       } else {
-        totals.income += signedAmount;
+        totals.income += signedAmountInUsd;
       }
-      totals.net += signedAmount;
+      totals.net += signedAmountInUsd;
       return totals;
     },
     { income: 0, expense: 0, net: 0 }
@@ -286,7 +295,7 @@ const TransactionHistory = async ({ searchParams }: SearchParamProps) => {
                   isAllAccounts
                     ? Number(accounts?.totalCurrentBalance) || 0
                     : selectedAccount?.currentBalance || 0
-                } />
+                } sourceCurrency={isAllAccounts ? "USD" : selectedAccount?.currencyCode} />
               </p>
             </div>
           </div>

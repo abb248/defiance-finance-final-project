@@ -27,6 +27,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [showMfa, setShowMfa] = useState(false);
   const [factorId, setFactorId] = useState("");
+  const [challengeId, setChallengeId] = useState("");
   const [mfaCode, setMfaCode] = useState("");
 
   const formSchema = authFormSchema(type);
@@ -85,6 +86,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
         } else if (result?.requiresMfa && result?.factorId) {
           setShowMfa(true);
           setFactorId(result.factorId);
+          setChallengeId(result.challengeId || "");
         } else if (result?.user) {
           router.replace("/");
           router.refresh();
@@ -111,15 +113,25 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
     setFormError(null);
 
     try {
-      const challenge = await challenge2FA(factorId);
-      if (!challenge?.id) throw new Error("Verification could not be initiated.");
+      let currentChallengeId = challengeId;
 
-      const verify = await verify2FA(factorId, challenge.id, mfaCode);
+      if (!currentChallengeId) {
+        const challenge = await challenge2FA(factorId);
+        if (!challenge?.id) throw new Error("Verification could not be initiated.");
+        currentChallengeId = challenge.id;
+        setChallengeId(challenge.id);
+      }
+
+      const verify = await verify2FA(factorId, currentChallengeId, mfaCode);
       if (verify) {
         router.replace("/");
         router.refresh();
       } else {
         setFormError("Invalid code. Please enter the current code from your app.");
+        setMfaCode("");
+
+        const nextChallenge = await challenge2FA(factorId);
+        setChallengeId(nextChallenge?.id || "");
       }
     } catch {
       setFormError("Verification failed.");
@@ -305,12 +317,12 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
               disabled={isLoading}
               className="h-12 w-full rounded-xl bg-gradient-to-r from-[#0F5EA8] via-[#1684D8] to-[#22A7E8] text-15 font-semibold text-white shadow-[0_14px_28px_rgba(21,116,196,0.28)] transition hover:from-[#0B4E92] hover:via-[#0875C4] hover:to-[#1595D6]"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : isSignIn ? (
+            {isLoading ? (
+              <>
+                <Loader2 size={18} className="mr-2 animate-spin" />
+                {isSignIn ? "Checking account..." : "Creating account..."}
+              </>
+            ) : isSignIn ? (
                 "Sign in"
               ) : (
                 "Create account"

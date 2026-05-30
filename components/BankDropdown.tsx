@@ -92,7 +92,10 @@ const BankDropdown = ({
             {displayed ? (
               <span className="block truncate text-12 text-gray-500">
                 {displayed.bankName || "Account"} -{" "}
-                <FormattedAmount amount={displayed.currentBalance || 0} />
+                <FormattedAmount
+                  amount={displayed.currentBalance || 0}
+                  sourceCurrency={displayed.currencyCode}
+                />
               </span>
             ) : null}
           </div>
@@ -132,7 +135,10 @@ const BankDropdown = ({
                   </span>
                   <span className="truncate text-12 text-gray-500">
                     {account.bankName || "Account"} -{" "}
-                    <FormattedAmount amount={account.currentBalance || 0} />
+                    <FormattedAmount
+                      amount={account.currentBalance || 0}
+                      sourceCurrency={account.currencyCode}
+                    />
                   </span>
                 </div>
                 {isSelected ? (

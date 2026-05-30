@@ -79,15 +79,19 @@ const BankCard = ({
             </p>
             <p className="font-ibm-plex-serif text-22 font-bold leading-tight text-white md:text-24">
               {showBalance ? (
-                <FormattedAmount amount={account.currentBalance} />
+                <FormattedAmount
+                  amount={account.currentBalance}
+                  sourceCurrency={account.currencyCode}
+                />
               ) : (
-                "••••••"
+                <span aria-hidden>&bull;&bull;&bull;&bull;&bull;&bull;</span>
               )}
             </p>
           </div>
 
           <p className="font-mono text-15 font-medium tracking-[0.18em] text-white/95">
-            •••• &nbsp; •••• &nbsp; •••• &nbsp;
+            &bull;&bull;&bull;&bull; &nbsp; &bull;&bull;&bull;&bull; &nbsp;
+            &bull;&bull;&bull;&bull; &nbsp;
             <span className="text-16 font-semibold">{lastFour}</span>
           </p>
 

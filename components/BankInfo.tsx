@@ -23,7 +23,10 @@ const BankInfo = ({ account }: BankInfoProps) => {
         <div className="flex shrink-0 flex-col text-right">
           <p className="text-12 text-gray-600">Current Balance</p>
           <p className="text-16 font-semibold text-gray-900">
-            <FormattedAmount amount={account.currentBalance || 0} />
+            <FormattedAmount
+              amount={account.currentBalance || 0}
+              sourceCurrency={account.currencyCode}
+            />
           </p>
         </div>
       </div>

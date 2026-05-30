@@ -31,7 +31,10 @@ const BankTabItem = ({
           {title}
         </p>
         <p className="text-12 text-gray-600">
-          <FormattedAmount amount={account.currentBalance || 0} />
+          <FormattedAmount
+            amount={account.currentBalance || 0}
+            sourceCurrency={account.currencyCode}
+          />
         </p>
       </div>
     </Link>

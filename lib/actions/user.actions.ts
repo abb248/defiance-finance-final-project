@@ -195,7 +195,16 @@ export const signUp = async ({
 
 
 // 2. GİRİŞ YAP
-export const signIn = async ({ email, password }: signInProps): Promise<ActionResult<any> & { requiresMfa?: boolean, factorId?: string }> => {
+export const signIn = async ({
+  email,
+  password,
+}: signInProps): Promise<
+  ActionResult<any> & {
+    requiresMfa?: boolean;
+    factorId?: string;
+    challengeId?: string;
+  }
+> => {
   try {
     const supabase = await createSessionClient();
 
@@ -206,14 +215,26 @@ export const signIn = async ({ email, password }: signInProps): Promise<ActionRe
 
     if (error) throw error;
 
-    // Check if MFA is required
+    // Check if MFA is required and prepare the challenge before returning to the UI.
     const mfaData = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (mfaData.data?.nextLevel === 'aal2' && mfaData.data?.currentLevel === 'aal1') {
       const factors = await supabase.auth.mfa.listFactors();
-      const totpFactor = factors.data?.totp?.[0];
+      const totpFactor = factors.data?.totp?.find((factor: any) => factor.status === "verified");
 
       if (totpFactor) {
-        return { user: null, error: null, requiresMfa: true, factorId: totpFactor.id };
+        const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: totpFactor.id,
+        });
+
+        if (challengeError) throw challengeError;
+
+        return {
+          user: null,
+          error: null,
+          requiresMfa: true,
+          factorId: totpFactor.id,
+          challengeId: challenge?.id,
+        };
       }
     }
 

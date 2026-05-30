@@ -40,7 +40,10 @@ const TransactionAccountSelect = ({
       {accounts.length} accounts - <FormattedAmount amount={totalCurrentBalance} />
     </>
   ) : (
-    <FormattedAmount amount={selected?.currentBalance || 0} />
+    <FormattedAmount
+      amount={selected?.currentBalance || 0}
+      sourceCurrency={selected?.currencyCode}
+    />
   );
 
   useEffect(() => {
@@ -160,7 +163,10 @@ const TransactionAccountSelect = ({
                     </p>
                     <p className="text-12 text-gray-600">
                       {account.bankName || account.subtype || "Account"} -{" "}
-                      <FormattedAmount amount={account.currentBalance || 0} />
+                      <FormattedAmount
+                        amount={account.currentBalance || 0}
+                        sourceCurrency={account.currencyCode}
+                      />
                     </p>
                   </div>
 

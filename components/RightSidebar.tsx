@@ -22,7 +22,7 @@ import {
 } from '@/lib/budget-utils'
 import { buildFinancialAlerts } from '@/lib/alert-utils'
 import { buildFinancialHealthInsight } from '@/lib/insight-utils'
-import { cn, countTransactionCategories } from '@/lib/utilsz'
+import { cn, convertAmount, countTransactionCategories } from '@/lib/utilsz'
 import { createConnectSession, createSaltEdgeCustomer } from '@/lib/actions/saltedge.actions' // Salt Edge oturum oluşturma fonksiyonunu import ettik
 
 
@@ -62,7 +62,13 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
       previousMonthSpending: 0,
       spendingChangePercent: 0,
       totalCurrentBalance: banks.reduce(
-        (sum, bank) => sum + (Number(bank.currentBalance) || 0),
+        (sum, bank) =>
+          sum +
+          convertAmount(
+            Number(bank.currentBalance) || 0,
+            bank.currencyCode || "USD",
+            "USD"
+          ),
         0
       ),
       transactionCount: transactions.length,
@@ -73,7 +79,11 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
         id: bank.supabaseItemId,
         name: bank.name || "Bank account",
         bankName: bank.bankName || "Connected bank",
-        balance: Number(bank.currentBalance) || 0,
+        balance: convertAmount(
+          Number(bank.currentBalance) || 0,
+          bank.currencyCode || "USD",
+          "USD"
+        ),
         income: 0,
         spending: 0,
         transactionCount: 0,
@@ -337,7 +347,7 @@ const RightSidebar = ({ user, banks = [], transactions = [] }: RightSidebarProps
                     {upcomingSubscription.name}
                   </p>
                   <p className="mt-1 text-12 text-gray-600">
-                    <FormattedAmount amount={upcomingSubscription.amount} /> •{' '}
+                    <FormattedAmount amount={upcomingSubscription.amount} /> |{' '}
                     {upcomingSubscription.daysUntilDue < 0
                       ? `${Math.abs(upcomingSubscription.daysUntilDue)} days late`
                       : `${upcomingSubscription.daysUntilDue} days left`}
