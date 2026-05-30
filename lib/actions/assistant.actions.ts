@@ -12,6 +12,7 @@ type AssistantAccountSummary = {
   name: string;
   bankName: string;
   balance: number;
+  currencyCode: string;
 };
 
 type AssistantDefaultReceivingAccount = AssistantAccountSummary & {
@@ -23,6 +24,7 @@ type AssistantCategorySummary = {
   amount: number;
   percentage: number;
   count: number;
+  currencyCode: string;
 };
 
 type AssistantTransactionSummary = {
@@ -33,6 +35,13 @@ type AssistantTransactionSummary = {
   signedAmount: number;
   category: string;
   date: string;
+  currencyCode: string;
+};
+
+type AssistantCurrencyTotal = {
+  currencyCode: string;
+  amount: number;
+  count: number;
 };
 
 export type AssistantBudget = {
@@ -121,6 +130,8 @@ export type FinanceAssistantOverview = {
   dailyAverageSpending: number;
   topCategories: AssistantCategorySummary[];
   recentTransactions: AssistantTransactionSummary[];
+  monthlyTransferTotals: AssistantCurrencyTotal[];
+  latestTransferTransaction: AssistantTransactionSummary | null;
   largestExpense: AssistantTransactionSummary | null;
   budgetAnalyses: AssistantBudgetAnalysis[];
   savingsGoalAnalyses: AssistantSavingsGoalAnalysis[];
@@ -167,10 +178,17 @@ const detectTurkish = (question: string) =>
     "hesap",
     "bakiye",
     "islem",
+    "toplam",
+    "transfer",
+    "tl",
+    "try",
     "tasarruf",
     "varsayilan",
     "alici",
   ]);
+
+const formatAssistantAmount = (amount: number, currencyCode?: string | null) =>
+  formatAmount(amount, currencyCode || "USD");
 
 const getMonthTiming = () => {
   const now = new Date();
@@ -188,6 +206,7 @@ const buildAssistantContext = (overview: FinanceAssistantOverview) => ({
     name: account.name,
     bankName: account.bankName,
     balance: account.balance,
+    currencyCode: account.currencyCode,
   })),
   defaultReceivingAccount: overview.defaultReceivingAccount,
   thisMonth: {
@@ -208,13 +227,17 @@ const buildAssistantContext = (overview: FinanceAssistantOverview) => ({
     signedAmount: transaction.signedAmount,
     category: transaction.category,
     date: transaction.date,
+    currencyCode: transaction.currencyCode,
   })),
+  monthlyTransferTotals: overview.monthlyTransferTotals,
+  latestTransferTransaction: overview.latestTransferTransaction,
   largestExpense: overview.largestExpense
     ? {
         name: overview.largestExpense.name,
         amount: overview.largestExpense.amount,
         category: overview.largestExpense.category,
         date: overview.largestExpense.date,
+        currencyCode: overview.largestExpense.currencyCode,
       }
     : null,
 });
@@ -243,7 +266,7 @@ const askGemini = async ({
           parts: [
             {
               text:
-                "You are Defiance Finance's finance assistant. Answer using only the provided finance context. Keep answers short, practical, and friendly. Do not invent transactions, balances, budgets, or goals. If the context does not contain enough data, say that clearly. Do not give guaranteed investment, tax, or legal advice. If the user writes Turkish, answer in simple Turkish without Turkish special characters.",
+                "You are Defiance Finance's finance assistant. Answer using only the provided finance context. Keep answers short, practical, and friendly. Do not invent transactions, balances, budgets, or goals. Treat computedFallbackAnswer as the source of truth for amounts, currencies, counts, and dates. You may rephrase it, but do not contradict or omit its currency information. If the context does not contain enough data, say that clearly. Do not give guaranteed investment, tax, or legal advice. If the user writes Turkish, answer in simple Turkish without Turkish special characters.",
             },
           ],
         },
@@ -301,6 +324,7 @@ const mapTransaction = (
     signedAmount,
     category: normalizeCategory(transaction.category),
     date: transaction.date || "",
+    currencyCode: transaction.currencyCode || "USD",
   };
 };
 
@@ -329,6 +353,25 @@ const buildOverview = (
     (sum, transaction) => sum + transaction.amount,
     0
   );
+  const monthlyTransferTotals = Object.values(
+    monthExpenses
+      .filter((transaction) => transaction.category.toLowerCase() === "transfer")
+      .reduce<Record<string, AssistantCurrencyTotal>>((acc, transaction) => {
+        const currencyCode = transaction.currencyCode || "USD";
+
+        if (!acc[currencyCode]) {
+          acc[currencyCode] = {
+            currencyCode,
+            amount: 0,
+            count: 0,
+          };
+        }
+
+        acc[currencyCode].amount += transaction.amount;
+        acc[currencyCode].count += 1;
+        return acc;
+      }, {})
+  );
 
   const groupedCategories = monthExpenses.reduce<Record<string, AssistantCategorySummary>>(
     (acc, transaction) => {
@@ -338,6 +381,7 @@ const buildOverview = (
           amount: 0,
           percentage: 0,
           count: 0,
+          currencyCode: transaction.currencyCode || "USD",
         };
       }
 
@@ -361,6 +405,10 @@ const buildOverview = (
   const projectedMonthSpending = dailyAverageSpending * daysInMonth;
   const largestExpense =
     [...monthExpenses].sort((a, b) => b.amount - a.amount)[0] || null;
+  const latestTransferTransaction =
+    sortedTransactions.find(
+      (transaction) => transaction.category.toLowerCase() === "transfer"
+    ) || null;
   const topAccount =
     [...accounts].sort((a, b) => b.currentBalance - a.currentBalance)[0] || null;
   const defaultReceivingId =
@@ -387,6 +435,7 @@ const buildOverview = (
         name: defaultReceivingAccountRaw.name || "Bank account",
         bankName: defaultReceivingAccountRaw.bankName || "Connected bank",
         balance: Number(defaultReceivingAccountRaw.currentBalance) || 0,
+        currencyCode: defaultReceivingAccountRaw.currencyCode || "USD",
         shareableId:
           defaultReceivingAccountRaw.shareableId ||
           defaultReceivingAccountRaw.supabaseItemId,
@@ -576,14 +625,16 @@ const buildOverview = (
 
   const quickInsights = [
     topCategory
-      ? `Top spending category this month is ${topCategory.name} with ${formatAmount(
-          topCategory.amount
+      ? `Top spending category this month is ${topCategory.name} with ${formatAssistantAmount(
+          topCategory.amount,
+          topCategory.currencyCode
         )}.`
       : "There is no spending data for this month yet.",
     `Projected spending for this month is about ${formatAmount(projectedMonthSpending)}.`,
     topAccount
-      ? `Highest account balance is in ${topAccount.name || "one account"} with ${formatAmount(
-          topAccount.currentBalance
+      ? `Highest account balance is in ${topAccount.name || "one account"} with ${formatAssistantAmount(
+          topAccount.currentBalance,
+          topAccount.currencyCode
         )}.`
       : "No bank account balance is available yet.",
     topBudgetRisk
@@ -611,6 +662,7 @@ const buildOverview = (
       name: account.name || "Bank account",
       bankName: account.bankName || "Connected bank",
       balance: Number(account.currentBalance) || 0,
+      currencyCode: account.currencyCode || "USD",
     })),
     defaultReceivingAccount,
     monthSpent,
@@ -619,6 +671,8 @@ const buildOverview = (
     dailyAverageSpending,
     topCategories,
     recentTransactions: sortedTransactions.slice(0, 5),
+    monthlyTransferTotals,
+    latestTransferTransaction,
     largestExpense,
     budgetAnalyses,
     savingsGoalAnalyses,
@@ -693,6 +747,43 @@ export const askFinanceAssistant = async (
   const topCategory = overview.topCategories[0];
   const largestExpense = overview.largestExpense;
   const topAccount = [...overview.accounts].sort((a, b) => b.balance - a.balance)[0];
+  const asksAboutTransfer = includesAny(normalizedQuestion, [
+    "transfer",
+    "gonder",
+    "gonderdim",
+    "gonderd",
+    "havale",
+    "sent",
+  ]);
+  const asksAboutLatestTransfer =
+    asksAboutTransfer &&
+    includesAny(normalizedQuestion, [
+      "son",
+      "last",
+      "latest",
+      "recent",
+      "islem",
+      "hareket",
+    ]);
+  const asksAboutTransferTotal =
+    asksAboutTransfer &&
+    includesAny(normalizedQuestion, [
+      "toplam",
+      "total",
+      "ne kadar",
+      "harcad",
+      "spent",
+      "amount",
+    ]);
+  const asksAboutCurrency = includesAny(normalizedQuestion, [
+    "tl",
+    "try",
+    "turkish lira",
+    "turk lirasi",
+    "türk lirası",
+    "para birimi",
+    "currency",
+  ]);
 
   let answer: string;
 
@@ -700,6 +791,34 @@ export const askFinanceAssistant = async (
     answer = isTurkish
       ? "Bir soru yazarsan harcamalarini, hesaplarini veya son islemlerini analiz edebilirim."
       : "Ask me about your spending, accounts, or recent transactions.";
+  } else if (asksAboutLatestTransfer) {
+    const latestTransfer = overview.latestTransferTransaction;
+
+    answer = latestTransfer
+      ? isTurkish
+        ? `Son transfer islemin ${latestTransfer.name}: ${formatAssistantAmount(
+            latestTransfer.amount,
+            latestTransfer.currencyCode
+          )}, ${latestTransfer.accountName} hesabi, tarih ${latestTransfer.date || "bilinmiyor"}.`
+        : `Your latest transfer is ${latestTransfer.name}: ${formatAssistantAmount(
+            latestTransfer.amount,
+            latestTransfer.currencyCode
+          )}, account ${latestTransfer.accountName}, date ${latestTransfer.date || "unknown"}.`
+      : isTurkish
+      ? "Son transfer islemi bulunmuyor."
+      : "No transfer transaction was found.";
+  } else if (asksAboutTransferTotal || asksAboutCurrency) {
+    const transferTotalText = overview.monthlyTransferTotals
+      .map((total) => formatAssistantAmount(total.amount, total.currencyCode))
+      .join(", ");
+
+    answer = overview.monthlyTransferTotals.length
+      ? isTurkish
+        ? `Bu ay giden transfer toplamin ${transferTotalText}. Para birimi islem kaydindaki currency alanindan geliyor.`
+        : `Your outgoing transfer total this month is ${transferTotalText}. The currency comes from each transaction's currency field.`
+      : isTurkish
+      ? "Bu ay giden transfer kaydi bulunmuyor."
+      : "No outgoing transfer transactions were found for this month.";
   } else if (
     includesAny(normalizedQuestion, [
       "recent",
@@ -712,7 +831,10 @@ export const askFinanceAssistant = async (
     const recentText = overview.recentTransactions
       .map(
         (transaction) =>
-          `${transaction.name} (${formatAmount(transaction.amount)}, ${transaction.category})`
+          `${transaction.name} (${formatAssistantAmount(
+            transaction.amount,
+            transaction.currencyCode
+          )}, ${transaction.category})`
       )
       .join(", ");
 
@@ -735,11 +857,13 @@ export const askFinanceAssistant = async (
 
     answer = defaultAccount
       ? isTurkish
-        ? `Varsayilan alici hesabin ${defaultAccount.name}. Bakiye ${formatAmount(
-            defaultAccount.balance
+        ? `Varsayilan alici hesabin ${defaultAccount.name}. Bakiye ${formatAssistantAmount(
+            defaultAccount.balance,
+            defaultAccount.currencyCode
           )}. Hesap ID: ${defaultAccount.shareableId || defaultAccount.id}.`
-        : `Your default receiving account is ${defaultAccount.name}. Balance is ${formatAmount(
-            defaultAccount.balance
+        : `Your default receiving account is ${defaultAccount.name}. Balance is ${formatAssistantAmount(
+            defaultAccount.balance,
+            defaultAccount.currencyCode
           )}. Account ID: ${defaultAccount.shareableId || defaultAccount.id}.`
       : isTurkish
       ? "Varsayilan alici hesap secilmemis."
@@ -777,15 +901,17 @@ export const askFinanceAssistant = async (
     ])
   ) {
     const accountsText = overview.accounts
-      .map((account) => `${account.name}: ${formatAmount(account.balance)}`)
+      .map((account) => `${account.name}: ${formatAssistantAmount(account.balance, account.currencyCode)}`)
       .join(", ");
 
     answer = isTurkish
-      ? `${topAccount?.name || "Bir hesabinda"} en yuksek bakiye gorunuyor: ${formatAmount(
-          topAccount?.balance || 0
+      ? `${topAccount?.name || "Bir hesabinda"} en yuksek bakiye gorunuyor: ${formatAssistantAmount(
+          topAccount?.balance || 0,
+          topAccount?.currencyCode
         )}. Hesap ozeti: ${accountsText}.`
-      : `${topAccount?.name || "One account"} has the highest balance: ${formatAmount(
-          topAccount?.balance || 0
+      : `${topAccount?.name || "One account"} has the highest balance: ${formatAssistantAmount(
+          topAccount?.balance || 0,
+          topAccount?.currencyCode
         )}. Account summary: ${accountsText}.`;
   } else if (
     includesAny(normalizedQuestion, [
@@ -882,11 +1008,13 @@ export const askFinanceAssistant = async (
   ) {
     answer = topCategory
       ? isTurkish
-        ? `Bu ay en yuksek harcama kategorin ${topCategory.name}. Bu kategoride ${formatAmount(
-            topCategory.amount
+        ? `Bu ay en yuksek harcama kategorin ${topCategory.name}. Bu kategoride ${formatAssistantAmount(
+            topCategory.amount,
+            topCategory.currencyCode
           )} harcadin ve bu, aylik harcamalarinin yaklasik %${topCategory.percentage} kismi.`
-        : `Your top spending category this month is ${topCategory.name}. You spent ${formatAmount(
-            topCategory.amount
+        : `Your top spending category this month is ${topCategory.name}. You spent ${formatAssistantAmount(
+            topCategory.amount,
+            topCategory.currencyCode
           )} there, which is about ${topCategory.percentage}% of this month's spending.`
       : isTurkish
       ? "Bu ay icin kategori bazli harcama bulunmuyor."
@@ -931,8 +1059,9 @@ export const askFinanceAssistant = async (
           overview.monthIncome
         )} gelir gorunuyor.${
           largestExpense
-            ? ` En buyuk harcaman ${largestExpense.name} icin ${formatAmount(
-                largestExpense.amount
+            ? ` En buyuk harcaman ${largestExpense.name} icin ${formatAssistantAmount(
+                largestExpense.amount,
+                largestExpense.currencyCode
               )}.`
             : ""
         }`
@@ -942,8 +1071,9 @@ export const askFinanceAssistant = async (
           overview.monthSpent
         )} spending and ${formatAmount(overview.monthIncome)} income.${
           largestExpense
-            ? ` Your largest expense is ${largestExpense.name} for ${formatAmount(
-                largestExpense.amount
+            ? ` Your largest expense is ${largestExpense.name} for ${formatAssistantAmount(
+                largestExpense.amount,
+                largestExpense.currencyCode
               )}.`
             : ""
         }`;

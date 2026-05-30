@@ -1,6 +1,7 @@
 "use server";
 
 import { getAccounts } from "@/lib/actions/bank.actions";
+import { isDemoAccountId } from "@/lib/demo-data";
 import { validateTransferAmount } from "@/lib/transfer-limits";
 import { createClient } from "@supabase/supabase-js";
 
@@ -45,6 +46,26 @@ export const createTransaction = async (transactionData: TransferTransactionData
 
     if (error) {
       console.error("Supabase insert error:", error);
+
+      if (
+        isDemoAccountId(transactionData.senderId) ||
+        isDemoAccountId(transactionData.receiverId)
+      ) {
+        return JSON.parse(
+          JSON.stringify({
+            id: transactionData.referenceNumber || `demo-transfer-${Date.now()}`,
+            amount: transactionData.amount,
+            currency,
+            status: "success",
+            type: "transfer",
+            recipient_email: transactionData.email,
+            description,
+            created_at: new Date().toISOString(),
+            is_demo_fallback: true,
+          })
+        );
+      }
+
       throw error;
     }
 

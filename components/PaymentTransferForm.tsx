@@ -60,7 +60,7 @@ type PaymentTransferFormValues = z.infer<typeof paymentTransferSchema>
 
 interface BankAccount {
   id: string
-  name: string
+  name?: string
   currentBalance: number
   bankName?: string | null
   currencyCode?: string | null
@@ -78,6 +78,7 @@ type FavoriteRecipient = {
   email: string
   shareableId: string
   label: string
+  accountLabel?: string
   lastUsedAt: string
 }
 
@@ -108,6 +109,59 @@ const getFavoriteRecipientsKey = (userEmail?: string) =>
 
 const createReferenceNumber = () =>
   `DF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`
+
+const normalizeFavoriteEmail = (email: string) => email.trim().toLowerCase()
+
+const normalizeFavoriteAccountId = (shareableId: string) => shareableId.trim()
+
+const getFavoriteRecipientId = (email: string, shareableId: string) =>
+  `${normalizeFavoriteEmail(email)}:${normalizeFavoriteAccountId(shareableId)}`
+
+const getFavoriteAccountLabel = (
+  shareableId: string,
+  sourceAccounts: BankAccount[] = []
+) => {
+  const cleanShareableId = normalizeFavoriteAccountId(shareableId)
+  const account = sourceAccounts.find(
+    (item) => getAccountIdentifier(item) === cleanShareableId
+  )
+  const title = account?.name || account?.bankName || "Receiving account"
+  const suffix = cleanShareableId.slice(-6)
+
+  return suffix ? `${title} ...${suffix}` : title
+}
+
+const normalizeFavoriteRecipients = (
+  recipients: FavoriteRecipient[],
+  sourceAccounts: BankAccount[] = []
+) => {
+  const seen = new Set<string>()
+  const normalized: FavoriteRecipient[] = []
+
+  recipients.forEach((recipient) => {
+    const email = recipient.email?.trim()
+    const shareableId = normalizeFavoriteAccountId(recipient.shareableId || "")
+
+    if (!email || !shareableId) return
+
+    const id = getFavoriteRecipientId(email, shareableId)
+    if (seen.has(id)) return
+
+    seen.add(id)
+    normalized.push({
+      id,
+      email,
+      shareableId,
+      label: recipient.label?.trim() || email.split("@")[0] || email,
+      accountLabel:
+        recipient.accountLabel?.trim() ||
+        getFavoriteAccountLabel(shareableId, sourceAccounts),
+      lastUsedAt: recipient.lastUsedAt || new Date().toISOString(),
+    })
+  })
+
+  return normalized
+}
 
 const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -165,15 +219,17 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
     (email: string, shareableId: string) =>
       favoriteRecipients.some(
         (recipient) =>
-          recipient.email.toLowerCase() === email.trim().toLowerCase() &&
-          recipient.shareableId === shareableId.trim()
+          recipient.id === getFavoriteRecipientId(email, shareableId)
       ),
     [favoriteRecipients]
   )
 
   const persistFavoriteRecipients = React.useCallback(
     (nextRecipients: FavoriteRecipient[]) => {
-      const limitedRecipients = nextRecipients.slice(0, 8)
+      const limitedRecipients = normalizeFavoriteRecipients(
+        nextRecipients,
+        recipientAccounts
+      ).slice(0, 8)
       setFavoriteRecipients(limitedRecipients)
 
       if (typeof window !== "undefined") {
@@ -183,7 +239,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
         )
       }
     },
-    [userEmail]
+    [recipientAccounts, userEmail]
   )
 
   React.useEffect(() => {
@@ -191,7 +247,18 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
 
     try {
       const saved = window.localStorage.getItem(getFavoriteRecipientsKey(userEmail))
-      setFavoriteRecipients(saved ? JSON.parse(saved) : [])
+      const parsedRecipients = saved ? JSON.parse(saved) : []
+      const normalizedRecipients = Array.isArray(parsedRecipients)
+        ? normalizeFavoriteRecipients(parsedRecipients)
+        : []
+      setFavoriteRecipients(normalizedRecipients)
+
+      if (saved) {
+        window.localStorage.setItem(
+          getFavoriteRecipientsKey(userEmail),
+          JSON.stringify(normalizedRecipients)
+        )
+      }
     } catch {
       setFavoriteRecipients([])
     }
@@ -253,19 +320,16 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
     if (!email || !shareableId) return
 
     const nextFavorite: FavoriteRecipient = {
-      id: `${email.toLowerCase()}-${shareableId}`,
+      id: getFavoriteRecipientId(email, shareableId),
       email,
       shareableId,
       label: email.split("@")[0] || email,
+      accountLabel: getFavoriteAccountLabel(shareableId, recipientAccounts),
       lastUsedAt: new Date().toISOString(),
     }
 
     const withoutDuplicate = favoriteRecipients.filter(
-      (recipient) =>
-        !(
-          recipient.email.toLowerCase() === email.toLowerCase() &&
-          recipient.shareableId === shareableId
-        )
+      (recipient) => recipient.id !== nextFavorite.id
     )
 
     persistFavoriteRecipients([nextFavorite, ...withoutDuplicate])
@@ -781,6 +845,7 @@ const PaymentTransferForm = ({ accounts, userEmail }: PaymentTransferFormProps) 
                   >
                     <p className="truncate text-13 font-semibold text-gray-900">{recipient.label}</p>
                     <p className="truncate text-12 text-gray-500">{recipient.email}</p>
+                    <p className="truncate text-11 text-gray-400">{recipient.accountLabel}</p>
                   </button>
                   <button
                     type="button"

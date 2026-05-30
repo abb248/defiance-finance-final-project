@@ -71,6 +71,9 @@ const splitMessage = (content: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const ASSISTANT_WELCOME_MESSAGE =
+  "I can help you understand your spending, balances, and recent transactions.";
+
 const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantChatProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -92,9 +95,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       role: "assistant",
-      content:
-        overview.quickInsights[0] ||
-        "I can help you understand your spending, balances, and recent transactions.",
+      content: ASSISTANT_WELCOME_MESSAGE,
     },
   ]);
 
@@ -235,9 +236,7 @@ const FinanceAssistantChat = ({ overview, initialQuestion }: FinanceAssistantCha
     setMessages([
       {
         role: "assistant",
-        content:
-          overview.quickInsights[0] ||
-          "I can help you understand your spending, balances, and recent transactions.",
+        content: ASSISTANT_WELCOME_MESSAGE,
       },
     ]);
     setInput("");

@@ -8,7 +8,7 @@ import { cn, getAccountIdentifier } from "@/lib/utilsz";
 
 interface BankAccount {
   id: string;
-  name: string;
+  name?: string;
   currentBalance: number;
   bankName?: string | null;
   currencyCode?: string | null;

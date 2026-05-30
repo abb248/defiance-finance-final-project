@@ -1,6 +1,13 @@
 "use server";
 
 import { createSaltEdgeCustomer } from "@/lib/actions/saltedge.actions";
+import {
+  getDemoAccountById,
+  getDemoAccounts,
+  getDemoTransactionsForAccount,
+  isDemoAccountId,
+  isDemoUserEmail,
+} from "@/lib/demo-data";
 import { convertAmount } from "@/lib/utilsz";
 import { createClient } from "@supabase/supabase-js";
 import { cache } from "react";
@@ -16,6 +23,17 @@ const requireEnv = (key: string) => {
 };
 
 const BASE_URL = process.env.SALT_EDGE_BASE_URL || "https://www.saltedge.com/api/v6";
+
+type AccountsResult = {
+  data: Account[];
+  totalBanks: number;
+  totalCurrentBalance: number;
+};
+
+type AccountDetailsResult = {
+  data: Account;
+  transactions: Transaction[];
+};
 
 const SALT_EDGE_HEADERS = () => ({
   Accept: "application/json",
@@ -129,7 +147,7 @@ const inferTransactionCategory = ({
   return "Payment";
 };
 
-const mapSaltEdgeTransaction = (transaction: any) => {
+const mapSaltEdgeTransaction = (transaction: any): Transaction => {
   const amount = Number(transaction?.amount || 0);
   const description =
     transaction?.description ||
@@ -158,12 +176,33 @@ const mapSaltEdgeTransaction = (transaction: any) => {
   };
 };
 
-const mapLocalTransaction = (transaction: any, accountId: string) => {
+const getAccountTransferIds = (account: Partial<Account> | null | undefined, fallbackId: string) =>
+  Array.from(
+    new Set(
+      [fallbackId, account?.shareableId, account?.supabaseItemId, account?.id]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+    )
+  );
+
+const buildLocalTransferFilter = (accountIds: string[]) =>
+  accountIds
+    .flatMap((accountId) => [
+      `description.ilike.%From: ${accountId}%`,
+      `description.ilike.%Sent to: ${accountId}%`,
+    ])
+    .join(",");
+
+const mapLocalTransaction = (
+  transaction: any,
+  accountId: string,
+  lookupAccountIds = [accountId]
+): Transaction => {
   const description = String(transaction.description || "Online Transfer");
   const amount = Math.abs(Number(transaction.amount) || 0);
   const isIncoming =
-    description.includes(`Sent to: ${accountId}`) &&
-    !description.includes(`From: ${accountId}`);
+    lookupAccountIds.some((id) => description.includes(`Sent to: ${id}`)) &&
+    !lookupAccountIds.some((id) => description.includes(`From: ${id}`));
 
   return {
     id: String(transaction.id),
@@ -182,52 +221,68 @@ const mapLocalTransaction = (transaction: any, accountId: string) => {
 };
 
 export const getAccounts = cache(async ({ email }: { email: string }) => {
-  const customer = await createSaltEdgeCustomer(email);
-  const customerId = customer?.customer_id;
-  if (!customerId) return { data: [], totalBanks: 0, totalCurrentBalance: 0 };
+  const buildAccountsResult = (mapped: Account[], totalBanks: number): AccountsResult => {
+    const totalCurrentBalance = mapped.reduce(
+      (sum: number, account: any) =>
+        sum +
+        convertAmount(
+          Number(account?.currentBalance) || 0,
+          account?.currencyCode || "USD",
+          "USD"
+        ),
+      0
+    );
 
-  const connections = await paginate("/connections", { customer_id: String(customerId) });
-  const accounts = await paginate("/accounts", { customer_id: String(customerId) });
+    return { data: mapped, totalBanks, totalCurrentBalance };
+  };
 
-  const byConnectionId = new Map<string, any>(
-    connections.map((connection: any) => [String(connection?.id), connection])
-  );
+  const buildDemoAccountsResult = () => buildAccountsResult(getDemoAccounts(), 1);
 
-  const mapped = accounts.map((account: any) => {
-    const connection = byConnectionId.get(String(account?.connection_id));
-    const providerName = connection?.provider_name || connection?.provider_code;
+  try {
+    const customer = await createSaltEdgeCustomer(email);
+    const customerId = customer?.customer_id;
+    if (!customerId) return isDemoUserEmail(email) ? buildDemoAccountsResult() : { data: [], totalBanks: 0, totalCurrentBalance: 0 };
 
-    return {
-      id: String(account?.id),
-      supabaseItemId: String(account?.id),
-      shareableId: String(account?.id),
-      connectionId: String(account?.connection_id),
-      name: account?.name || providerName || "Bank account",
-      bankName: providerName || null,
-      currentBalance: Number(account?.balance || 0),
-      currencyCode: account?.currency_code || null,
-      type: account?.nature || null,
-      subtype: account?.nature || null,
-      officialName: account?.extra?.account_name || account?.name || null,
-      mask: String(account?.id || "").slice(-4),
-      raw: account,
-      connectionRaw: connection || null,
-    };
-  });
+    const connections = await paginate("/connections", { customer_id: String(customerId) });
+    const accounts = await paginate("/accounts", { customer_id: String(customerId) });
 
-  const totalBanks = new Set(connections.map((connection: any) => String(connection?.id))).size;
-  const totalCurrentBalance = mapped.reduce(
-    (sum: number, account: any) =>
-      sum +
-      convertAmount(
-        Number(account?.currentBalance) || 0,
-        account?.currencyCode || "USD",
-        "USD"
-      ),
-    0
-  );
+    if (!accounts.length && isDemoUserEmail(email)) {
+      return buildDemoAccountsResult();
+    }
 
-  return { data: mapped, totalBanks, totalCurrentBalance };
+    const byConnectionId = new Map<string, any>(
+      connections.map((connection: any) => [String(connection?.id), connection])
+    );
+
+    const mapped = accounts.map((account: any) => {
+      const connection = byConnectionId.get(String(account?.connection_id));
+      const providerName = connection?.provider_name || connection?.provider_code;
+
+      return {
+        id: String(account?.id),
+        supabaseItemId: String(account?.id),
+        shareableId: String(account?.id),
+        connectionId: String(account?.connection_id),
+        name: account?.name || providerName || "Bank account",
+        bankName: providerName || null,
+        currentBalance: Number(account?.balance || 0),
+        currencyCode: account?.currency_code || null,
+        type: account?.nature || null,
+        subtype: account?.nature || null,
+        officialName: account?.extra?.account_name || account?.name || null,
+        mask: String(account?.id || "").slice(-4),
+        raw: account,
+        connectionRaw: connection || null,
+      };
+    });
+
+    const totalBanks = new Set(connections.map((connection: any) => String(connection?.id))).size;
+
+    return buildAccountsResult(mapped, totalBanks);
+  } catch (error) {
+    console.error("Accounts could not be fetched:", error);
+    return isDemoUserEmail(email) ? buildDemoAccountsResult() : { data: [], totalBanks: 0, totalCurrentBalance: 0 };
+  }
 });
 
 export const getRecipientAccounts = async ({ email }: { email: string }) => {
@@ -251,8 +306,44 @@ export const getAccount = cache(async ({
   supabaseItemId: string;
   connectionId?: string | null;
   account?: any;
-}) => {
+}): Promise<AccountDetailsResult | null> => {
   try {
+    if (isDemoAccountId(supabaseItemId)) {
+      const demoAccount = account || getDemoAccountById(supabaseItemId);
+
+      if (!demoAccount) return null;
+
+      const accountIds = getAccountTransferIds(demoAccount, supabaseItemId);
+      const localTransferFilter = buildLocalTransferFilter(accountIds);
+
+      const { data: dbTransactions, error: dbTransactionsError } = await supabase
+        .from("transactions")
+        .select("*")
+        .or(localTransferFilter);
+
+      if (dbTransactionsError) {
+        console.error("Demo transactions could not be fetched:", dbTransactionsError);
+      }
+
+      const localTransactions = (dbTransactions || []).map((transaction: any) =>
+        mapLocalTransaction(transaction, String(supabaseItemId), accountIds)
+      );
+      const seededTransactions = getDemoTransactionsForAccount(supabaseItemId);
+      const seenIds = new Set<string>();
+      const transactions = [...localTransactions, ...seededTransactions].filter(
+        (transaction) => {
+          if (seenIds.has(transaction.id)) return false;
+          seenIds.add(transaction.id);
+          return true;
+        }
+      );
+
+      return {
+        data: demoAccount,
+        transactions,
+      };
+    }
+
     const currentAccount = account || {
       id: supabaseItemId,
       supabaseItemId,
@@ -278,10 +369,8 @@ export const getAccount = cache(async ({
       per_page: "100",
     });
 
-    const localTransferFilter = [
-      `description.ilike.%From: ${supabaseItemId}%`,
-      `description.ilike.%Sent to: ${supabaseItemId}%`,
-    ].join(",");
+    const accountIds = getAccountTransferIds(currentAccount, supabaseItemId);
+    const localTransferFilter = buildLocalTransferFilter(accountIds);
 
     const { data: dbTransactions, error: dbTransactionsError } = await supabase
       .from("transactions")
@@ -294,7 +383,7 @@ export const getAccount = cache(async ({
 
     const allTransactions = [
       ...(dbTransactions || []).map((transaction: any) =>
-        mapLocalTransaction(transaction, String(supabaseItemId))
+        mapLocalTransaction(transaction, String(supabaseItemId), accountIds)
       ),
       ...transactions.map(mapSaltEdgeTransaction),
     ];

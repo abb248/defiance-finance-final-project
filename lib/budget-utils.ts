@@ -1,3 +1,5 @@
+import { getDemoPlannerState, isDemoUserEmail } from "@/lib/demo-data";
+
 export const PLANNER_STORAGE_KEY = "defiance-finance-planner";
 
 export const getPlannerStorageKey = (userScope?: string) => {
@@ -329,22 +331,33 @@ export const analyzeSubscriptions = (
 };
 
 export const getPlannerStateFromStorage = (userScope?: string): StoredPlannerState => {
+  const fallbackState = isDemoUserEmail(userScope)
+    ? getDemoPlannerState()
+    : { budgets: [], savingsGoals: [], subscriptions: [] };
+
   if (typeof window === "undefined") {
-    return { budgets: [], savingsGoals: [], subscriptions: [] };
+    return fallbackState;
   }
 
   try {
     const storedPlanner = window.localStorage.getItem(getPlannerStorageKey(userScope));
-    if (!storedPlanner) return { budgets: [], savingsGoals: [], subscriptions: [] };
+    if (!storedPlanner) return fallbackState;
 
     const parsed = JSON.parse(storedPlanner);
-    return {
+    const parsedState = {
       budgets: Array.isArray(parsed?.budgets) ? parsed.budgets : [],
       savingsGoals: Array.isArray(parsed?.savingsGoals) ? parsed.savingsGoals : [],
       subscriptions: Array.isArray(parsed?.subscriptions) ? parsed.subscriptions : [],
     };
+
+    const hasPlannerData =
+      parsedState.budgets.length ||
+      parsedState.savingsGoals.length ||
+      parsedState.subscriptions.length;
+
+    return hasPlannerData ? parsedState : fallbackState;
   } catch {
-    return { budgets: [], savingsGoals: [], subscriptions: [] };
+    return fallbackState;
   }
 };
 
