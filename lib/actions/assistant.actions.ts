@@ -2,6 +2,7 @@
 
 import { getAccount, getAccounts } from "@/lib/actions/bank.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
+import { getAssistantQuestionIntent, includesAny } from "@/lib/assistant-intent";
 import { formatAmount, getAccountIdentifier } from "@/lib/utilsz";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
@@ -166,26 +167,6 @@ const getHealthFactorStatus = (score: number): AssistantHealthFactor["status"] =
   if (score >= 50) return "watch";
   return "risk";
 };
-
-const includesAny = (value: string, terms: string[]) =>
-  terms.some((term) => value.includes(term));
-
-const detectTurkish = (question: string) =>
-  includesAny(question.toLowerCase(), [
-    "bu ay",
-    "butce",
-    "harca",
-    "hesap",
-    "bakiye",
-    "islem",
-    "toplam",
-    "transfer",
-    "tl",
-    "try",
-    "tasarruf",
-    "varsayilan",
-    "alici",
-  ]);
 
 const formatAssistantAmount = (amount: number, currencyCode?: string | null) =>
   formatAmount(amount, currencyCode || "USD");
@@ -742,48 +723,16 @@ export const askFinanceAssistant = async (
     };
   }
 
-  const normalizedQuestion = question.trim().toLowerCase();
-  const isTurkish = detectTurkish(normalizedQuestion);
+  const {
+    normalizedQuestion,
+    isTurkish,
+    asksAboutLatestTransfer,
+    asksAboutTransferTotal,
+    asksAboutCurrency,
+  } = getAssistantQuestionIntent(question);
   const topCategory = overview.topCategories[0];
   const largestExpense = overview.largestExpense;
   const topAccount = [...overview.accounts].sort((a, b) => b.balance - a.balance)[0];
-  const asksAboutTransfer = includesAny(normalizedQuestion, [
-    "transfer",
-    "gonder",
-    "gonderdim",
-    "gonderd",
-    "havale",
-    "sent",
-  ]);
-  const asksAboutLatestTransfer =
-    asksAboutTransfer &&
-    includesAny(normalizedQuestion, [
-      "son",
-      "last",
-      "latest",
-      "recent",
-      "islem",
-      "hareket",
-    ]);
-  const asksAboutTransferTotal =
-    asksAboutTransfer &&
-    includesAny(normalizedQuestion, [
-      "toplam",
-      "total",
-      "ne kadar",
-      "harcad",
-      "spent",
-      "amount",
-    ]);
-  const asksAboutCurrency = includesAny(normalizedQuestion, [
-    "tl",
-    "try",
-    "turkish lira",
-    "turk lirasi",
-    "türk lirası",
-    "para birimi",
-    "currency",
-  ]);
 
   let answer: string;
 
