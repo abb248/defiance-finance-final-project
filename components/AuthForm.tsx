@@ -277,6 +277,17 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
               placeholder="Enter your password"
             />
 
+            {isSignIn ? (
+              <div className="-mt-2 flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-13 font-semibold text-[#175CD3] hover:text-[#1849A9]"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            ) : null}
+
             {type === "sign-up" ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <CustomInput

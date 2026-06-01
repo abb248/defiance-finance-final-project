@@ -1,6 +1,20 @@
 "use client";
 
-import { CalendarDays, CreditCard, Hash, Tag, X } from "lucide-react";
+import {
+  CalendarDays,
+  CreditCard,
+  FileText,
+  Hash,
+  Megaphone,
+  Plane,
+  ReceiptText,
+  ShoppingBag,
+  Tag,
+  Utensils,
+  Wallet,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { KeyboardEvent, useMemo, useState } from "react";
 
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
@@ -9,71 +23,94 @@ import { cn } from "@/lib/utilsz";
 const categoryStyles: Record<
   string,
   {
-    border: string;
-    bg: string;
+    icon: LucideIcon;
+    iconText: string;
     text: string;
-    dot: string;
   }
 > = {
-  posted: {
-    border: "border-success-600",
-    bg: "bg-success-50",
-    text: "text-success-700",
-    dot: "bg-success-600",
-  },
-  pending: {
-    border: "border-[#FDB022]",
-    bg: "bg-[#FFFAEB]",
-    text: "text-[#B54708]",
-    dot: "bg-[#FDB022]",
-  },
   transfer: {
-    border: "border-blue-600",
-    bg: "bg-blue-25",
-    text: "text-blue-700",
-    dot: "bg-blue-600",
+    icon: Wallet,
+    iconText: "text-blue-600 dark:text-blue-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   travel: {
-    border: "border-blue-600",
-    bg: "bg-blue-25",
-    text: "text-blue-700",
-    dot: "bg-blue-600",
+    icon: Plane,
+    iconText: "text-blue-600 dark:text-blue-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   payment: {
-    border: "border-success-600",
-    bg: "bg-success-50",
-    text: "text-success-700",
-    dot: "bg-success-600",
+    icon: CreditCard,
+    iconText: "text-slate-500 dark:text-slate-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+  payroll: {
+    icon: Wallet,
+    iconText: "text-emerald-600 dark:text-emerald-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+  tax: {
+    icon: ReceiptText,
+    iconText: "text-orange-500 dark:text-orange-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+  ads: {
+    icon: Megaphone,
+    iconText: "text-violet-600 dark:text-violet-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+  advertising: {
+    icon: Megaphone,
+    iconText: "text-violet-600 dark:text-violet-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   "food and drink": {
-    border: "border-[#F04438]",
-    bg: "bg-[#FEF3F2]",
-    text: "text-[#B42318]",
-    dot: "bg-[#F04438]",
+    icon: Utensils,
+    iconText: "text-amber-500 dark:text-amber-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+  food: {
+    icon: Utensils,
+    iconText: "text-amber-500 dark:text-amber-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   shopping: {
-    border: "border-[#7F56D9]",
-    bg: "bg-[#F4F3FF]",
-    text: "text-[#6941C6]",
-    dot: "bg-[#7F56D9]",
+    icon: ShoppingBag,
+    iconText: "text-violet-600 dark:text-violet-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   "bank fees": {
-    border: "border-[#667085]",
-    bg: "bg-gray-100",
-    text: "text-gray-700",
-    dot: "bg-gray-500",
+    icon: FileText,
+    iconText: "text-slate-500 dark:text-slate-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   uncategorized: {
-    border: "border-gray-300",
-    bg: "bg-gray-25",
-    text: "text-gray-700",
-    dot: "bg-gray-500",
+    icon: Tag,
+    iconText: "text-slate-500 dark:text-slate-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
   default: {
-    border: "border-pink-600",
-    bg: "bg-pink-25",
-    text: "text-pink-700",
-    dot: "bg-pink-600",
+    icon: Tag,
+    iconText: "text-slate-500 dark:text-slate-300",
+    text: "text-gray-700 dark:text-slate-300",
+  },
+};
+
+const statusStyles: Record<string, { dot: string; text: string }> = {
+  posted: {
+    dot: "bg-success-600 dark:bg-emerald-300",
+    text: "text-success-700 dark:text-emerald-300",
+  },
+  success: {
+    dot: "bg-success-600 dark:bg-emerald-300",
+    text: "text-success-700 dark:text-emerald-300",
+  },
+  pending: {
+    dot: "bg-amber-500 dark:bg-amber-300",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  default: {
+    dot: "bg-slate-500 dark:bg-slate-300",
+    text: "text-gray-700 dark:text-slate-300",
   },
 };
 
@@ -158,16 +195,36 @@ const getSignedAmount = (transaction: Transaction) => {
 const getTransactionType = (transaction: Transaction) =>
   getSignedAmount(transaction) < 0 ? "Debit" : "Credit";
 
-const CategoryBadge = ({ category }: CategoryBadgeProps) => {
-  const normalized = normalizeCategory(category);
-  const styles = categoryStyles[normalized] || categoryStyles.default;
+const formatLabel = (value?: string) => normalizeCategory(value).replace(/\b\w/g, (char) => char.toUpperCase());
+
+const StatusLabel = ({ status }: { status?: string }) => {
+  const normalized = normalizeCategory(status);
+  const styles = statusStyles[normalized] || statusStyles.default;
 
   return (
-    <div className={cn("category-badge", styles.border, styles.bg)}>
-      <div className={cn("size-2 rounded-full", styles.dot)} />
-      <p className={cn("text-12 font-medium capitalize", styles.text)}>
+    <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      <span className={cn("size-2 rounded-full", styles.dot)} />
+      <span className={cn("text-13 font-medium capitalize", styles.text)}>
         {normalized}
-      </p>
+      </span>
+    </div>
+  );
+};
+
+const CategoryLabel = ({ category }: CategoryBadgeProps) => {
+  const normalized = normalizeCategory(category);
+  const styles = categoryStyles[normalized] || categoryStyles.default;
+  const Icon = styles.icon;
+
+  return (
+    <div className="inline-flex items-center gap-2 whitespace-nowrap">
+      <Icon
+        aria-hidden="true"
+        className={cn("size-4 stroke-[1.8]", styles.iconText)}
+      />
+      <span className={cn("text-13 font-medium", styles.text)}>
+        {formatLabel(category)}
+      </span>
     </div>
   );
 };
@@ -317,7 +374,7 @@ const TransactionsTable = ({
                   </td>
 
                   <td className="px-4 py-4 pr-10">
-                    <CategoryBadge category={transaction.status} />
+                    <StatusLabel status={transaction.status} />
                   </td>
 
                   <td className="min-w-32 px-4 py-4 pr-10 text-14 text-gray-600">
@@ -329,7 +386,7 @@ const TransactionsTable = ({
                   </td>
 
                   <td className="px-4 py-4 pr-10 max-md:hidden">
-                    <CategoryBadge category={transaction.category} />
+                    <CategoryLabel category={transaction.category} />
                   </td>
                 </tr>
               );

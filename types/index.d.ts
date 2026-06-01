@@ -71,6 +71,8 @@ type CreditCardProps = {
   showBalance?: boolean;
   gradientClass?: string;
   variant?: "default" | "sidebar";
+  showFooter?: boolean;
+  decorative?: boolean;
 };
 
 declare interface DoughnutChartProps {

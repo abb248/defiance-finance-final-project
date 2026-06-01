@@ -23,7 +23,6 @@ const Home = async ({ searchParams: { id } }: SearchParamProps) => {
   if (!accounts) return;
 
   const accountsData = accounts?.data || [];
-  const supabaseItemId = (id as string) || accountsData[0]?.supabaseItemId;
 
   const accountDetailsList = await Promise.all(
     accountsData.map((account: Account) =>
@@ -49,6 +48,9 @@ const Home = async ({ searchParams: { id } }: SearchParamProps) => {
   );
 
   const featuredAccounts = accountsByRecentActivity.slice(0, 3);
+  const defaultAccountId =
+    accountsByRecentActivity[0]?.supabaseItemId || accountsData[0]?.supabaseItemId;
+  const supabaseItemId = (id as string) || defaultAccountId;
 
   const selectedIndex = accountsData.findIndex(
     (account: Account) => account.supabaseItemId === supabaseItemId

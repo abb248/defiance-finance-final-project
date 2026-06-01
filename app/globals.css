@@ -237,20 +237,6 @@ html.dark .transaction-row:hover {
   background-color: rgba(96, 165, 250, 0.09) !important;
 }
 
-html.dark .category-badge {
-  background-color: rgba(148, 163, 184, 0.08) !important;
-  border-color: rgba(148, 163, 184, 0.24) !important;
-}
-
-html.dark .category-badge p {
-  color: #dbeafe !important;
-}
-
-html.dark .category-badge div {
-  background-color: #60a5fa !important;
-  opacity: 0.78;
-}
-
 html.dark .text-\[\#F04438\] {
   color: #fca5a5 !important;
 }
@@ -476,6 +462,18 @@ html.dark .footer_name-mobile {
     @apply flex flex-col justify-between gap-8 px-6 py-8;
   }
 
+  .right-sidebar-card-stack {
+    @apply relative flex w-full justify-center pb-7;
+  }
+
+  .right-sidebar-card-front {
+    @apply relative z-10 w-full max-w-[320px];
+  }
+
+  .right-sidebar-card-back {
+    @apply absolute right-0 top-7 z-0 w-[92%] max-w-[300px] opacity-95;
+  }
+
   .spending-categories {
     @apply mt-6 flex flex-col gap-6;
   }
@@ -554,7 +552,8 @@ html.dark .footer_name-mobile {
   }
 
   .my-banks-grid {
-    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 2xl:grid-cols-3;
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 420px));
   }
 
   /* My Banks */
@@ -604,7 +603,7 @@ html.dark .footer_name-mobile {
 
   /* Bank Card */
   .bank-card-wrapper {
-    @apply flex w-full flex-col;
+    @apply flex w-full max-w-[420px] flex-col;
   }
 
   .bank-card-wrapper--sidebar {
@@ -612,11 +611,16 @@ html.dark .footer_name-mobile {
   }
 
   .bank-card {
-    @apply relative flex h-[210px] w-full overflow-hidden rounded-2xl border border-white/20 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_-12px_rgba(0,0,0,0.4)];
+    @apply relative flex w-full overflow-hidden rounded-2xl border border-white/20 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_-12px_rgba(0,0,0,0.4)];
+    aspect-ratio: 1.586 / 1;
   }
 
   .bank-card--sidebar {
-    @apply h-[190px];
+    @apply h-auto rounded-xl shadow-[0_16px_34px_-18px_rgba(15,23,42,0.65)];
+  }
+
+  .bank-card--decorative {
+    @apply pointer-events-none shadow-[0_18px_32px_-22px_rgba(15,23,42,0.55)];
   }
 
   .bank-card-glow {
@@ -629,6 +633,83 @@ html.dark .footer_name-mobile {
 
   .bank-card-body {
     @apply relative z-10 flex h-full w-full flex-col justify-between p-5;
+  }
+
+  .bank-card .bank-card-bank-name {
+    color: rgba(255, 255, 255, 0.82) !important;
+  }
+
+  .bank-card .bank-card-account-label,
+  .bank-card .bank-card-balance,
+  .bank-card .bank-card-meta-value {
+    color: #ffffff !important;
+  }
+
+  .bank-card .bank-card-balance-label {
+    color: rgba(255, 255, 255, 0.68) !important;
+  }
+
+  .bank-card .bank-card-number {
+    color: rgba(255, 255, 255, 0.96) !important;
+  }
+
+  .bank-card .bank-card-meta-label {
+    color: rgba(255, 255, 255, 0.62) !important;
+  }
+
+  .bank-card-body--sidebar {
+    @apply p-4;
+  }
+
+  .bank-card--sidebar .bank-card-glow {
+    @apply size-24 blur-xl;
+  }
+
+  .bank-card--sidebar .bank-card-bank-name {
+    @apply max-w-[190px];
+  }
+
+  .bank-card--sidebar .bank-card-account-label {
+    @apply max-w-[180px];
+  }
+
+  .bank-card--sidebar .bank-card-balance-label {
+    @apply text-[9px] leading-[12px] tracking-[0.14em];
+  }
+
+  .bank-card--sidebar .bank-card-balance {
+    @apply text-[22px] leading-[26px];
+  }
+
+  .bank-card--sidebar .bank-card-number {
+    @apply text-13 tracking-[0.14em];
+  }
+
+  .bank-card--sidebar .bank-card-number span {
+    @apply text-13;
+  }
+
+  .bank-card--sidebar .bank-card-meta-label {
+    @apply text-[9px] leading-[12px];
+  }
+
+  .bank-card--sidebar .bank-card-meta-value {
+    @apply text-10 leading-[14px];
+  }
+
+  .bank-card-decorative-chip {
+    @apply absolute right-4 top-4 size-8 rounded-md bg-gradient-to-br from-[#F5D78E] to-[#C9A227] opacity-95;
+    background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.35) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0.35) 75%,
+        transparent 75%
+      ),
+      linear-gradient(135deg, #f5d78e 0%, #c9a227 100%);
+    background-size: 8px 8px, 100% 100%;
   }
 
   .bank-card-chip {
@@ -650,6 +731,18 @@ html.dark .footer_name-mobile {
     @apply flex shrink-0 items-center gap-2;
   }
 
+  .bank-card--sidebar .bank-card-brand {
+    @apply gap-1.5;
+  }
+
+  .bank-card--sidebar .bank-card-brand img:first-child {
+    @apply w-4;
+  }
+
+  .bank-card--sidebar .bank-card-brand img:last-child {
+    @apply w-8;
+  }
+
   .bank-card-footer {
     @apply mt-3 flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2;
   }
@@ -657,11 +750,6 @@ html.dark .footer_name-mobile {
   /* Bank Info */
   .bank-info {
     @apply gap-[18px] flex p-4 transition-all border bg-blue-25 border-transparent;
-  }
-
-  /* Category Badge */
-  .category-badge {
-    @apply flex-center truncate w-fit gap-1 rounded-2xl border-[1.5px] py-[2px] pl-1.5 pr-2;
   }
 
   .banktab-item {

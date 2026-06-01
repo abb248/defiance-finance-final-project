@@ -2,8 +2,10 @@
 
 import { createAdminClient, createSessionClient } from "@/lib/supabase/server";
 import { createStripeCustomer } from "./stripe.actions";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { authFormSchema } from "@/lib/utils";
+import { z } from "zod";
 
 // --- TİP TANIMLAMALARI (Hataları önlemek için) ---
 interface SignUpParams {
@@ -24,6 +26,7 @@ interface signInProps {
 }
 
 type ActionResult<T> = { user: T | null; error: string | null };
+type PasswordRecoveryResult = { success: boolean; error: string | null; message?: string };
 
 // --- FONKSİYONLAR ---
 
@@ -64,6 +67,39 @@ const removeAuthUserIfCreated = async (userId?: string | null) => {
     console.error("Sign up cleanup failed:", cleanupError);
   }
 };
+
+const passwordResetEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email({ message: "Please enter a valid email address." });
+
+const recoveredPasswordSchema = z
+  .object({
+    password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+    confirmPassword: z.string().min(8, { message: "Password confirmation is required." }),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
+const getRequestOrigin = async () => {
+  const headerStore = await headers();
+  const origin = headerStore.get("origin");
+  if (origin) return origin;
+
+  const host = headerStore.get("host");
+  if (host) {
+    const protocol = headerStore.get("x-forwarded-proto") || "http";
+    return `${protocol}://${host}`;
+  }
+
+  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+};
+
+const genericResetMessage =
+  "If an account exists for that email, we sent password reset instructions.";
 
 // 1. KAYIT OL
 export const signUp = async ({
@@ -248,6 +284,100 @@ export const signIn = async ({
     return { user: null, error: message };
   }
 }
+
+export const requestPasswordReset = async (
+  email: string
+): Promise<PasswordRecoveryResult> => {
+  const validation = passwordResetEmailSchema.safeParse(email);
+
+  if (!validation.success) {
+    return {
+      success: false,
+      error: validation.error.errors[0]?.message || "Please enter a valid email address.",
+    };
+  }
+
+  try {
+    const supabase = await createSessionClient();
+    const origin = await getRequestOrigin();
+    const redirectTo = `${origin}/auth/callback?next=/reset-password`;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(validation.data, {
+      redirectTo,
+    });
+
+    if (error) {
+      console.error("Password reset request failed:", error);
+    }
+
+    return {
+      success: true,
+      error: null,
+      message: genericResetMessage,
+    };
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    return {
+      success: true,
+      error: null,
+      message: genericResetMessage,
+    };
+  }
+};
+
+export const resetRecoveredPassword = async ({
+  password,
+  confirmPassword,
+}: {
+  password: string;
+  confirmPassword: string;
+}): Promise<PasswordRecoveryResult> => {
+  const validation = recoveredPasswordSchema.safeParse({ password, confirmPassword });
+
+  if (!validation.success) {
+    return {
+      success: false,
+      error: validation.error.errors[0]?.message || "Please check the password fields.",
+    };
+  }
+
+  try {
+    const supabase = await createSessionClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) throw userError;
+
+    if (!user) {
+      return {
+        success: false,
+        error: "This reset link is invalid or expired. Please request a new password reset email.",
+      };
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: validation.data.password,
+    });
+
+    if (updateError) throw updateError;
+
+    await supabase.auth.signOut();
+
+    return {
+      success: true,
+      error: null,
+      message: "Password updated. Please sign in with your new password.",
+    };
+  } catch (error: any) {
+    console.error("Password recovery update error:", error);
+    return {
+      success: false,
+      error: error?.message || "Password could not be updated. Please request a new reset link.",
+    };
+  }
+};
 
 // 3. OTURUMU KONTROL ET
 export const getLoggedInUser = async () => {
