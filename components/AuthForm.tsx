@@ -143,11 +143,7 @@ const AuthForm = ({ type }: { type: "sign-in" | "sign-up" }) => {
   return (
     <section className="auth-card w-full rounded-2xl border border-blue-200/70 bg-white/85 p-6 text-[#111827] shadow-[0_24px_70px_rgba(15,82,140,0.16)] backdrop-blur-xl sm:p-8">
       <header className="mb-7 flex flex-col gap-6">
-        <Link href="/landing" className="flex items-center gap-2 w-fit text-14 font-medium text-gray-500 hover:text-blue-600 transition-colors">
-          <ArrowLeft size={16} />
-          Back to Home
-        </Link>
-        <Link href="/landing" className="flex w-fit items-center gap-3">
+        <Link href="/" className="flex w-fit items-center gap-3">
           <span className="flex size-14 items-center justify-center rounded-full border border-blue-100 bg-white/90 p-1.5 shadow-sm shadow-blue-900/5">
             <Image
               src="/brand/defiance-logo.jpg"
