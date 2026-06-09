@@ -22,6 +22,14 @@ Defiance Finance tries to solve this problem with one clear dashboard and relate
 - finance assistant answers based on app data
 - profile, security, and account settings
 
+## Final Report
+
+The final project report is saved in the `zey rapor local` folder.
+
+Direct report file:
+
+[Defiance Finance Final Report.pdf](zey%20rapor%20local/Defiance%20Finance%20Final%20Report.pdf)
+
 ## Screenshots
 
 | Sign In | Dashboard |
