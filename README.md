@@ -215,3 +215,5 @@ This is an MVP, so it has limits:
 [11] NIST Digital Identity Guidelines: https://pages.nist.gov/800-63-4/sp800-63b.html
 
 [12] Vitest Documentation: https://vitest.dev/guide/
+
+Senior Capstone Project — Ankara Medipol University
